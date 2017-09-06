@@ -2147,18 +2147,15 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 	}
 	newpolicydb = oldpolicydb + 1;
 
-	policydb = &state->ss->policydb;
-
-	newsidtab = kmalloc(sizeof(*newsidtab), GFP_KERNEL);
-	if (!newsidtab) {
-		rc = -ENOMEM;
-		goto out;
-	}
-
-	if (!state->initialized) {
-		rc = policydb_read(policydb, fp);
+	if (!ss_initialized) {
+		avtab_cache_init();
+		ebitmap_cache_init();
+		hashtab_cache_init();
+		rc = policydb_read(&policydb, fp);
 		if (rc) {
-			kfree(newsidtab);
+			avtab_cache_destroy();
+			ebitmap_cache_destroy();
+			hashtab_cache_destroy();
 			goto out;
 		}
 
@@ -2166,15 +2163,19 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 		rc = selinux_set_mapping(policydb, secclass_map,
 					 &state->ss->map);
 		if (rc) {
-			kfree(newsidtab);
-			policydb_destroy(policydb);
+			policydb_destroy(&policydb);
+			avtab_cache_destroy();
+			ebitmap_cache_destroy();
+			hashtab_cache_destroy();
 			goto out;
 		}
 
 		rc = policydb_load_isids(policydb, newsidtab);
 		if (rc) {
-			kfree(newsidtab);
-			policydb_destroy(policydb);
+			policydb_destroy(&policydb);
+			avtab_cache_destroy();
+			ebitmap_cache_destroy();
+			hashtab_cache_destroy();
 			goto out;
 		}
 
