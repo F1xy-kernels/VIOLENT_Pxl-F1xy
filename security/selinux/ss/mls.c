@@ -367,7 +367,7 @@ int mls_from_string(struct policydb *p, char *str, struct context *context,
 	if (!tmpstr) {
 		rc = -ENOMEM;
 	} else {
-		rc = mls_context_to_sid(p, ':', tmpstr, context,
+		rc = mls_context_to_sid(p, ':', &tmpstr, context,
 					NULL, SECSID_NULL);
 		kfree(tmpstr);
 	}
