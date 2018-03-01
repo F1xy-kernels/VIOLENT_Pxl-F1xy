@@ -42,6 +42,23 @@
 #include "objsec.h"
 #include "conditional.h"
 
+static DEFINE_MUTEX(sel_mutex);
+
+/* global data for booleans */
+static struct dentry *bool_dir;
+static int bool_num;
+static char **bool_pending_names;
+static int *bool_pending_values;
+
+/* global data for classes */
+static struct dentry *class_dir;
+static unsigned long last_class_ino;
+
+static char policy_opened;
+
+/* global data for policy capabilities */
+static struct dentry *policycap_dir;
+
 enum sel_inos {
 	SEL_ROOT_INO = 2,
 	SEL_LOAD,	/* load policy */
@@ -127,7 +144,7 @@ static ssize_t sel_read_enforce(struct file *filp, char __user *buf,
 	ssize_t length;
 
 	length = scnprintf(tmpbuf, TMPBUFLEN, "%d",
-			   enforcing_enabled(fsi->state));
+			   is_enforcing(&selinux_state));
 	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
 }
 
@@ -159,10 +176,10 @@ static ssize_t sel_write_enforce(struct file *file, const char __user *buf,
 
 	new_value = !!new_value;
 
-	old_value = enforcing_enabled(state);
+	old_value = is_enforcing(&selinux_state);
+
 	if (new_value != old_value) {
-		length = avc_has_perm(&selinux_state,
-				      current_sid(), SECINITSID_SECURITY,
+		length = avc_has_perm(current_sid(), SECINITSID_SECURITY,
 				      SECCLASS_SECURITY, SECURITY__SETENFORCE,
 				      NULL);
 		if (length)
@@ -172,11 +189,12 @@ static ssize_t sel_write_enforce(struct file *file, const char __user *buf,
 			new_value, old_value,
 			from_kuid(&init_user_ns, audit_get_loginuid(current)),
 			audit_get_sessionid(current));
-		enforcing_set(state, new_value);
+		set_enforcing(&selinux_state, new_value);
 		if (new_value)
-			avc_ss_reset(state->avc, 0);
+			avc_ss_reset(0);
 		selnl_notify_setenforce(new_value);
-		selinux_status_update_setenforce(state, new_value);
+		selinux_status_update_setenforce(&selinux_state,
+						 new_value);
 		if (!new_value)
 			call_lsm_notifier(LSM_POLICY_CHANGE, NULL);
 	}
@@ -204,8 +222,8 @@ static ssize_t sel_read_handle_unknown(struct file *filp, char __user *buf,
 	ssize_t length;
 	ino_t ino = file_inode(filp)->i_ino;
 	int handle_unknown = (ino == SEL_REJECT_UNKNOWN) ?
-		security_get_reject_unknown(state) :
-		!security_get_allow_unknown(state);
+		security_get_reject_unknown(&selinux_state) :
+		!security_get_allow_unknown(&selinux_state);
 
 	length = scnprintf(tmpbuf, TMPBUFLEN, "%d", handle_unknown);
 	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
@@ -218,8 +236,7 @@ static const struct file_operations sel_handle_unknown_ops = {
 
 static int sel_open_handle_status(struct inode *inode, struct file *filp)
 {
-	struct selinux_fs_info *fsi = file_inode(filp)->i_sb->s_fs_info;
-	struct page    *status = selinux_kernel_status_page(fsi->state);
+	struct page    *status = selinux_kernel_status_page(&selinux_state);
 
 	if (!status)
 		return -ENOMEM;
@@ -296,7 +313,7 @@ static ssize_t sel_write_disable(struct file *file, const char __user *buf,
 		goto out;
 
 	if (new_value) {
-		length = selinux_disable(fsi->state);
+		length = selinux_disable(&selinux_state);
 		if (length)
 			goto out;
 		audit_log(current->audit_context, GFP_KERNEL, AUDIT_MAC_STATUS,
@@ -351,7 +368,7 @@ static ssize_t sel_read_mls(struct file *filp, char __user *buf,
 	ssize_t length;
 
 	length = scnprintf(tmpbuf, TMPBUFLEN, "%d",
-			   security_mls_enabled(fsi->state));
+			   security_mls_enabled(&selinux_state));
 	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
 }
 
@@ -391,13 +408,13 @@ static int sel_open_policy(struct inode *inode, struct file *filp)
 	if (!plm)
 		goto err;
 
-	if (i_size_read(inode) != security_policydb_len(state)) {
+	if (i_size_read(inode) != security_policydb_len(&selinux_state)) {
 		inode_lock(inode);
-		i_size_write(inode, security_policydb_len(state));
+		i_size_write(inode, security_policydb_len(&selinux_state));
 		inode_unlock(inode);
 	}
 
-	rc = security_read_policy(state, &plm->data, &plm->len);
+	rc = security_read_policy(&selinux_state, &plm->data, &plm->len);
 	if (rc)
 		goto err;
 
@@ -562,7 +579,7 @@ static ssize_t sel_write_load(struct file *file, const char __user *buf,
 	if (copy_from_user(data, buf, count) != 0)
 		goto out;
 
-	length = security_load_policy(fsi->state, data, count);
+	length = security_load_policy(&selinux_state, data, count);
 	if (length) {
 		pr_warn_ratelimited("SELinux: failed to load policy\n");
 		goto out;
@@ -604,11 +621,12 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
 	if (length)
 		goto out;
 
-	length = security_context_to_sid(state, buf, size, &sid, GFP_KERNEL);
+	length = security_context_to_sid(&selinux_state, buf, size,
+					 &sid, GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_sid_to_context(state, sid, &canon, &len);
+	length = security_sid_to_context(&selinux_state, sid, &canon, &len);
 	if (length)
 		goto out;
 
@@ -633,7 +651,7 @@ static ssize_t sel_read_checkreqprot(struct file *filp, char __user *buf,
 	char tmpbuf[TMPBUFLEN];
 	ssize_t length;
 
-	length = scnprintf(tmpbuf, TMPBUFLEN, "%u", fsi->state->checkreqprot);
+	length = scnprintf(tmpbuf, TMPBUFLEN, "%u", selinux_state.checkreqprot);
 	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
 }
 
@@ -667,7 +685,7 @@ static ssize_t sel_write_checkreqprot(struct file *file, const char __user *buf,
 	if (sscanf(page, "%u", &new_value) != 1)
 		goto out;
 
-	fsi->state->checkreqprot = new_value ? 1 : 0;
+	selinux_state.checkreqprot = new_value ? 1 : 0;
 	length = count;
 out:
 	kfree(page);
@@ -730,19 +748,23 @@ static ssize_t sel_write_validatetrans(struct file *file,
 	if (sscanf(req, "%s %s %hu %s", oldcon, newcon, &tclass, taskcon) != 4)
 		goto out;
 
-	rc = security_context_str_to_sid(state, oldcon, &osid, GFP_KERNEL);
+	rc = security_context_str_to_sid(&selinux_state, oldcon, &osid,
+					 GFP_KERNEL);
 	if (rc)
 		goto out;
 
-	rc = security_context_str_to_sid(state, newcon, &nsid, GFP_KERNEL);
+	rc = security_context_str_to_sid(&selinux_state, newcon, &nsid,
+					 GFP_KERNEL);
 	if (rc)
 		goto out;
 
-	rc = security_context_str_to_sid(state, taskcon, &tsid, GFP_KERNEL);
+	rc = security_context_str_to_sid(&selinux_state, taskcon, &tsid,
+					 GFP_KERNEL);
 	if (rc)
 		goto out;
 
-	rc = security_validate_transition_user(state, osid, nsid, tsid, tclass);
+	rc = security_validate_transition_user(&selinux_state, osid, nsid,
+					       tsid, tclass);
 	if (!rc)
 		rc = count;
 out:
@@ -840,15 +862,17 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
 	if (sscanf(buf, "%s %s %hu", scon, tcon, &tclass) != 3)
 		goto out;
 
-	length = security_context_str_to_sid(state, scon, &ssid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, scon, &ssid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_context_str_to_sid(state, tcon, &tsid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, tcon, &tsid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	security_compute_av_user(state, ssid, tsid, tclass, &avd);
+	security_compute_av_user(&selinux_state, ssid, tsid, tclass, &avd);
 
 	length = scnprintf(buf, SIMPLE_TRANSACTION_LIMIT,
 			  "%x %x %x %x %u %x",
@@ -931,20 +955,23 @@ static ssize_t sel_write_create(struct file *file, char *buf, size_t size)
 		objname = namebuf;
 	}
 
-	length = security_context_str_to_sid(state, scon, &ssid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, scon, &ssid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_context_str_to_sid(state, tcon, &tsid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, tcon, &tsid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_transition_sid_user(state, ssid, tsid, tclass,
-					      objname, &newsid);
+	length = security_transition_sid_user(&selinux_state, ssid, tsid,
+					      tclass, objname, &newsid);
 	if (length)
 		goto out;
 
-	length = security_sid_to_context(state, newsid, &newcon, &len);
+	length = security_sid_to_context(&selinux_state, newsid, &newcon,
+					 &len);
 	if (length)
 		goto out;
 
@@ -997,19 +1024,23 @@ static ssize_t sel_write_relabel(struct file *file, char *buf, size_t size)
 	if (sscanf(buf, "%s %s %hu", scon, tcon, &tclass) != 3)
 		goto out;
 
-	length = security_context_str_to_sid(state, scon, &ssid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, scon, &ssid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_context_str_to_sid(state, tcon, &tsid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, tcon, &tsid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_change_sid(state, ssid, tsid, tclass, &newsid);
+	length = security_change_sid(&selinux_state, ssid, tsid, tclass,
+				     &newsid);
 	if (length)
 		goto out;
 
-	length = security_sid_to_context(state, newsid, &newcon, &len);
+	length = security_sid_to_context(&selinux_state, newsid, &newcon,
+					 &len);
 	if (length)
 		goto out;
 
@@ -1058,18 +1089,21 @@ static ssize_t sel_write_user(struct file *file, char *buf, size_t size)
 	if (sscanf(buf, "%s %s", con, user) != 2)
 		goto out;
 
-	length = security_context_str_to_sid(state, con, &sid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, con, &sid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_get_user_sids(state, sid, user, &sids, &nsids);
+	length = security_get_user_sids(&selinux_state, sid, user, &sids,
+					&nsids);
 	if (length)
 		goto out;
 
 	length = sprintf(buf, "%u", nsids) + 1;
 	ptr = buf + length;
 	for (i = 0; i < nsids; i++) {
-		rc = security_sid_to_context(state, sids[i], &newcon, &len);
+		rc = security_sid_to_context(&selinux_state, sids[i],
+					     &newcon, &len);
 		if (rc) {
 			length = rc;
 			goto out;
@@ -1123,19 +1157,23 @@ static ssize_t sel_write_member(struct file *file, char *buf, size_t size)
 	if (sscanf(buf, "%s %s %hu", scon, tcon, &tclass) != 3)
 		goto out;
 
-	length = security_context_str_to_sid(state, scon, &ssid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, scon, &ssid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_context_str_to_sid(state, tcon, &tsid, GFP_KERNEL);
+	length = security_context_str_to_sid(&selinux_state, tcon, &tsid,
+					     GFP_KERNEL);
 	if (length)
 		goto out;
 
-	length = security_member_sid(state, ssid, tsid, tclass, &newsid);
+	length = security_member_sid(&selinux_state, ssid, tsid, tclass,
+				     &newsid);
 	if (length)
 		goto out;
 
-	length = security_sid_to_context(state, newsid, &newcon, &len);
+	length = security_sid_to_context(&selinux_state, newsid, &newcon,
+					 &len);
 	if (length)
 		goto out;
 
@@ -1189,7 +1227,7 @@ static ssize_t sel_read_bool(struct file *filep, char __user *buf,
 	if (!page)
 		goto out;
 
-	cur_enforcing = security_get_bool_value(fsi->state, index);
+	cur_enforcing = security_get_bool_value(&selinux_state, index);
 	if (cur_enforcing < 0) {
 		ret = cur_enforcing;
 		goto out;
@@ -1304,9 +1342,9 @@ static ssize_t sel_commit_bools_write(struct file *filep,
 		goto out;
 
 	length = 0;
-	if (new_value && fsi->bool_pending_values)
-		length = security_set_bools(fsi->state, fsi->bool_num,
-					    fsi->bool_pending_values);
+	if (new_value && bool_pending_values)
+		length = security_set_bools(&selinux_state, bool_num,
+					    bool_pending_values);
 
 	if (!length)
 		length = count;
@@ -1359,7 +1397,7 @@ static int sel_make_bools(struct selinux_fs_info *fsi)
 	if (!page)
 		goto out;
 
-	ret = security_get_bools(fsi->state, &num, &names, &values);
+	ret = security_get_bools(&selinux_state, &num, &names, &values);
 	if (ret)
 		goto out;
 
@@ -1380,7 +1418,7 @@ static int sel_make_bools(struct selinux_fs_info *fsi)
 			goto out;
 
 		isec = (struct inode_security_struct *)inode->i_security;
-		ret = security_genfs_sid(fsi->state, "selinuxfs", page,
+		ret = security_genfs_sid(&selinux_state, "selinuxfs", page,
 					 SECCLASS_FILE, &sid);
 		if (ret) {
 			pr_warn_ratelimited("SELinux: no sid found, defaulting to security isid for %s\n",
@@ -1669,7 +1707,7 @@ static ssize_t sel_read_initcon(struct file *file, char __user *buf,
 	ssize_t ret;
 
 	sid = file_inode(file)->i_ino&SEL_INO_MASK;
-	ret = security_sid_to_context(fsi->state, sid, &con, &len);
+	ret = security_sid_to_context(&selinux_state, sid, &con, &len);
 	if (ret)
 		return ret;
 
@@ -1763,7 +1801,8 @@ static ssize_t sel_read_policycap(struct file *file, char __user *buf,
 	ssize_t length;
 	unsigned long i_ino = file_inode(file)->i_ino;
 
-	value = security_policycap_supported(fsi->state, i_ino & SEL_INO_MASK);
+	value = security_policycap_supported(&selinux_state,
+					     i_ino & SEL_INO_MASK);
 	length = scnprintf(tmpbuf, TMPBUFLEN, "%d", value);
 
 	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
@@ -1781,7 +1820,8 @@ static int sel_make_perm_files(char *objclass, int classvalue,
 	int i, rc, nperms;
 	char **perms;
 
-	rc = security_get_permissions(fsi->state, objclass, &perms, &nperms);
+	rc = security_get_permissions(&selinux_state, objclass, &perms,
+				      &nperms);
 	if (rc)
 		return rc;
 
@@ -1851,7 +1891,7 @@ static int sel_make_classes(struct selinux_fs_info *fsi)
 	/* delete any existing entries */
 	sel_remove_entries(fsi->class_dir);
 
-	rc = security_get_classes(fsi->state, &classes, &nclasses);
+	rc = security_get_classes(&selinux_state, &classes, &nclasses);
 	if (rc)
 		return rc;
 

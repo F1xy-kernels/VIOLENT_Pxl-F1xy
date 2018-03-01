@@ -80,12 +80,7 @@ const char *selinux_policycap_names[__POLICYDB_CAPABILITY_MAX] = {
 	"nnp_nosuid_transition"
 };
 
-int selinux_policycap_netpeer;
-int selinux_policycap_openperm;
-int selinux_policycap_extsockclass;
-int selinux_policycap_alwaysnetwork;
-int selinux_policycap_cgroupseclabel;
-int selinux_policycap_nnp_nosuid_transition;
+static struct selinux_ss selinux_ss;
 
 void selinux_ss_init(struct selinux_ss **ss)
 {
@@ -755,7 +750,7 @@ out:
 	kfree(n);
 	kfree(t);
 
-	if (!enforcing_enabled(state))
+	if (!is_enforcing(state))
 		return 0;
 	return -EPERM;
 }
@@ -781,7 +776,7 @@ static int security_compute_validatetrans(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	if (!user)
 		tclass = unmap_class(&state->ss->map, orig_tclass);
@@ -881,7 +876,7 @@ int security_bounded_transition(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	rc = -EINVAL;
 	old_context = sidtab_search(sidtab, old_sid);
@@ -1039,7 +1034,7 @@ void security_compute_xperms_decision(struct selinux_state *state,
 		goto allow;
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	scontext = sidtab_search(sidtab, ssid);
 	if (!scontext) {
@@ -1128,7 +1123,7 @@ void security_compute_av(struct selinux_state *state,
 		goto allow;
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	scontext = sidtab_search(sidtab, ssid);
 	if (!scontext) {
@@ -1182,7 +1177,7 @@ void security_compute_av_user(struct selinux_state *state,
 		goto allow;
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	scontext = sidtab_search(sidtab, ssid);
 	if (!scontext) {
@@ -1331,7 +1326,7 @@ static int security_sid_to_context_core(struct selinux_state *state,
 	}
 	read_lock(&state->ss->policy_rwlock);
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 	if (force)
 		context = sidtab_search_force(sidtab, sid);
 	else
@@ -1456,42 +1451,6 @@ out:
 	return rc;
 }
 
-int context_add_hash(struct policydb *policydb,
-		     struct context *context)
-{
-	int rc;
-	char *str;
-	int len;
-
-	if (context->str) {
-		context->hash = context_compute_hash(context->str);
-	} else {
-		rc = context_struct_to_string(policydb, context,
-					      &str, &len);
-		if (rc)
-			return rc;
-		context->hash = context_compute_hash(str);
-		kfree(str);
-	}
-	return 0;
-}
-
-static int context_struct_to_sid(struct selinux_state *state,
-				 struct context *context, u32 *sid)
-{
-	int rc;
-	struct sidtab *sidtab = state->ss->sidtab;
-	struct policydb *policydb = &state->ss->policydb;
-
-	if (!context->hash) {
-		rc = context_add_hash(policydb, context);
-		if (rc)
-			return rc;
-	}
-
-	return sidtab_context_to_sid(sidtab, context, sid);
-}
-
 static int security_context_to_sid_core(struct selinux_state *state,
 					const char *scontext, u32 scontext_len,
 					u32 *sid, u32 def_sid, gfp_t gfp_flags,
@@ -1535,16 +1494,16 @@ static int security_context_to_sid_core(struct selinux_state *state,
 	}
 	read_lock(&state->ss->policy_rwlock);
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 	rc = string_to_context_struct(policydb, sidtab, scontext2,
-				      &context, def_sid);
+				      scontext_len, &context, def_sid);
 	if (rc == -EINVAL && force) {
 		context.str = str;
 		context.len = strlen(str) + 1;
 		str = NULL;
 	} else if (rc)
 		goto out_unlock;
-	rc = context_struct_to_sid(state, &context, sid);
+	rc = sidtab_context_to_sid(sidtab, &context, sid);
 	context_destroy(&context);
 out_unlock:
 	read_unlock(&state->ss->policy_rwlock);
@@ -1642,7 +1601,7 @@ out:
 	kfree(s);
 	kfree(t);
 	kfree(n);
-	if (!enforcing_enabled(state))
+	if (!is_enforcing(state))
 		return 0;
 	return -EACCES;
 }
@@ -1720,7 +1679,7 @@ static int security_compute_sid(struct selinux_state *state,
 	}
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	scontext = sidtab_search(sidtab, ssid);
 	if (!scontext) {
@@ -1845,7 +1804,7 @@ static int security_compute_sid(struct selinux_state *state,
 			goto out_unlock;
 	}
 	/* Obtain the sid for the context. */
-	rc = context_struct_to_sid(state, &newcontext, out_sid);
+	rc = sidtab_context_to_sid(sidtab, &newcontext, out_sid);
 out_unlock:
 	read_unlock(&state->ss->policy_rwlock);
 	context_destroy(&newcontext);
@@ -1932,6 +1891,19 @@ int security_change_sid(struct selinux_state *state,
 				    out_sid, false);
 }
 
+/* Clone the SID into the new SID table. */
+static int clone_sid(u32 sid,
+		     struct context *context,
+		     void *arg)
+{
+	struct sidtab *s = arg;
+
+	if (sid > SECINITSID_NUM)
+		return sidtab_insert(s, sid, context);
+	else
+		return 0;
+}
+
 static inline int convert_context_handle_invalid_context(
 	struct selinux_state *state,
 	struct context *context)
@@ -1940,12 +1912,11 @@ static inline int convert_context_handle_invalid_context(
 	char *s;
 	u32 len;
 
-	if (enforcing_enabled(state))
+	if (is_enforcing(state))
 		return -EINVAL;
 
 	if (!context_struct_to_string(policydb, context, &s, &len)) {
-		pr_warn("SELinux:  Context %s would be invalid if enforcing\n",
-			s);
+		printk(KERN_WARNING "SELinux:  Context %s would be invalid if enforcing\n", s);
 		kfree(s);
 	}
 	return 0;
@@ -2068,8 +2039,9 @@ static int convert_context(struct context *oldc, struct context *newc, void *p)
 	}
 
 	/* Check the validity of the new context. */
-	if (!policydb_context_isvalid(args->newp, newc)) {
-		rc = convert_context_handle_invalid_context(args->state, oldc);
+	if (!policydb_context_isvalid(args->newp, c)) {
+		rc = convert_context_handle_invalid_context(args->state,
+							    &oldc);
 		if (rc)
 			goto bad;
 	}
@@ -2081,7 +2053,7 @@ static int convert_context(struct context *oldc, struct context *newc, void *p)
 	return 0;
 bad:
 	/* Map old representation to string and save it. */
-	rc = context_struct_to_string(args->oldp, oldc, &s, &len);
+	rc = context_struct_to_string(args->oldp, &oldc, &s, &len);
 	if (rc)
 		return rc;
 	context_destroy(newc);
@@ -2130,11 +2102,11 @@ static int security_preserve_bools(struct selinux_state *state,
 int security_load_policy(struct selinux_state *state, void *data, size_t len)
 {
 	struct policydb *policydb;
-	struct sidtab *oldsidtab, *newsidtab;
+	struct sidtab *sidtab;
 	struct policydb *oldpolicydb, *newpolicydb;
+	struct sidtab oldsidtab, newsidtab;
 	struct selinux_mapping *oldmapping;
 	struct selinux_map newmap;
-	struct sidtab_convert_params convert_params;
 	struct convert_context_args args;
 	u32 seqno;
 	int rc = 0;
@@ -2147,39 +2119,28 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 	}
 	newpolicydb = oldpolicydb + 1;
 
-	if (!ss_initialized) {
-		avtab_cache_init();
-		ebitmap_cache_init();
-		hashtab_cache_init();
-		rc = policydb_read(&policydb, fp);
-		if (rc) {
-			avtab_cache_destroy();
-			ebitmap_cache_destroy();
-			hashtab_cache_destroy();
+	policydb = &state->ss->policydb;
+	sidtab = &state->ss->sidtab;
+
+	if (!state->initialized) {
+		rc = policydb_read(policydb, fp);
+		if (rc)
 			goto out;
-		}
 
 		policydb->len = len;
 		rc = selinux_set_mapping(policydb, secclass_map,
 					 &state->ss->map);
 		if (rc) {
-			policydb_destroy(&policydb);
-			avtab_cache_destroy();
-			ebitmap_cache_destroy();
-			hashtab_cache_destroy();
+			policydb_destroy(policydb);
 			goto out;
 		}
 
-		rc = policydb_load_isids(policydb, newsidtab);
+		rc = policydb_load_isids(policydb, sidtab);
 		if (rc) {
-			policydb_destroy(&policydb);
-			avtab_cache_destroy();
-			ebitmap_cache_destroy();
-			hashtab_cache_destroy();
+			policydb_destroy(policydb);
 			goto out;
 		}
 
-		state->ss->sidtab = newsidtab;
 		security_load_policycaps(state);
 		state->initialized = 1;
 		seqno = ++state->ss->latest_granting;
@@ -2201,9 +2162,9 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 	newpolicydb->len = len;
 	/* If switching between different policy types, log MLS status */
 	if (policydb->mls_enabled && !newpolicydb->mls_enabled)
-		pr_info("SELinux: Disabling MLS support...\n");
+		printk(KERN_INFO "SELinux: Disabling MLS support...\n");
 	else if (!policydb->mls_enabled && newpolicydb->mls_enabled)
-		pr_info("SELinux: Enabling MLS support...\n");
+		printk(KERN_INFO "SELinux: Enabling MLS support...\n");
 
 	rc = policydb_load_isids(newpolicydb, newsidtab);
 	if (rc) {
@@ -2223,7 +2184,12 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 		goto err;
 	}
 
-	oldsidtab = state->ss->sidtab;
+	/* Clone the SID table. */
+	sidtab_shutdown(sidtab);
+
+	rc = sidtab_map(sidtab, clone_sid, &newsidtab);
+	if (rc)
+		goto err;
 
 	/*
 	 * Convert the internal representations of contexts
@@ -2247,11 +2213,12 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 
 	/* Save the old policydb and SID table to free later. */
 	memcpy(oldpolicydb, policydb, sizeof(*policydb));
+	sidtab_set(&oldsidtab, sidtab);
 
 	/* Install the new policydb and SID table. */
 	write_lock_irq(&state->ss->policy_rwlock);
 	memcpy(policydb, newpolicydb, sizeof(*policydb));
-	state->ss->sidtab = newsidtab;
+	sidtab_set(sidtab, &newsidtab);
 	security_load_policycaps(state);
 	oldmapping = state->ss->map.mapping;
 	state->ss->map.mapping = newmap.mapping;
@@ -2261,8 +2228,7 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 
 	/* Free the old policydb and SID table. */
 	policydb_destroy(oldpolicydb);
-	sidtab_destroy(oldsidtab);
-	kfree(oldsidtab);
+	sidtab_destroy(&oldsidtab);
 	kfree(oldmapping);
 
 	avc_ss_reset(state->avc, seqno);
@@ -2276,8 +2242,7 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 
 err:
 	kfree(newmap.mapping);
-	sidtab_destroy(newsidtab);
-	kfree(newsidtab);
+	sidtab_destroy(&newsidtab);
 	policydb_destroy(newpolicydb);
 
 out:
@@ -2314,7 +2279,7 @@ int security_port_sid(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	c = policydb->ocontexts[OCON_PORT];
 	while (c) {
@@ -2327,7 +2292,8 @@ int security_port_sid(struct selinux_state *state,
 
 	if (c) {
 		if (!c->sid[0]) {
-			rc = context_struct_to_sid(state, &c->context[0],
+			rc = sidtab_context_to_sid(sidtab,
+						   &c->context[0],
 						   &c->sid[0]);
 			if (rc)
 				goto out;
@@ -2352,12 +2318,14 @@ int security_ib_pkey_sid(struct selinux_state *state,
 			 u64 subnet_prefix, u16 pkey_num, u32 *out_sid)
 {
 	struct policydb *policydb;
+	struct sidtab *sidtab;
 	struct ocontext *c;
 	int rc = 0;
 
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
+	sidtab = &state->ss->sidtab;
 
 	c = policydb->ocontexts[OCON_IBPKEY];
 	while (c) {
@@ -2371,7 +2339,7 @@ int security_ib_pkey_sid(struct selinux_state *state,
 
 	if (c) {
 		if (!c->sid[0]) {
-			rc = context_struct_to_sid(state,
+			rc = sidtab_context_to_sid(sidtab,
 						   &c->context[0],
 						   &c->sid[0]);
 			if (rc)
@@ -2403,7 +2371,7 @@ int security_ib_endport_sid(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	c = policydb->ocontexts[OCON_IBENDPORT];
 	while (c) {
@@ -2418,7 +2386,8 @@ int security_ib_endport_sid(struct selinux_state *state,
 
 	if (c) {
 		if (!c->sid[0]) {
-			rc = context_struct_to_sid(state, &c->context[0],
+			rc = sidtab_context_to_sid(sidtab,
+						   &c->context[0],
 						   &c->sid[0]);
 			if (rc)
 				goto out;
@@ -2448,7 +2417,7 @@ int security_netif_sid(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	c = policydb->ocontexts[OCON_NETIF];
 	while (c) {
@@ -2459,11 +2428,13 @@ int security_netif_sid(struct selinux_state *state,
 
 	if (c) {
 		if (!c->sid[0] || !c->sid[1]) {
-			rc = context_struct_to_sid(state, &c->context[0],
-						   &c->sid[0]);
+			rc = sidtab_context_to_sid(sidtab,
+						  &c->context[0],
+						  &c->sid[0]);
 			if (rc)
 				goto out;
-			rc = context_struct_to_sid(state, &c->context[1],
+			rc = sidtab_context_to_sid(sidtab,
+						   &c->context[1],
 						   &c->sid[1]);
 			if (rc)
 				goto out;
@@ -2504,12 +2475,14 @@ int security_node_sid(struct selinux_state *state,
 		      u32 *out_sid)
 {
 	struct policydb *policydb;
+	struct sidtab *sidtab;
 	int rc;
 	struct ocontext *c;
 
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
+	sidtab = &state->ss->sidtab;
 
 	switch (domain) {
 	case AF_INET: {
@@ -2551,7 +2524,7 @@ int security_node_sid(struct selinux_state *state,
 
 	if (c) {
 		if (!c->sid[0]) {
-			rc = context_struct_to_sid(state,
+			rc = sidtab_context_to_sid(sidtab,
 						   &c->context[0],
 						   &c->sid[0]);
 			if (rc)
@@ -2609,7 +2582,7 @@ int security_get_user_sids(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	context_init(&usercon);
 
@@ -2635,17 +2608,12 @@ int security_get_user_sids(struct selinux_state *state,
 		usercon.role = i + 1;
 		ebitmap_for_each_positive_bit(&role->types, tnode, j) {
 			usercon.type = j + 1;
-			/*
-			 * The same context struct is reused here so the hash
-			 * must be reset.
-			 */
-			usercon.hash = 0;
 
 			if (mls_setup_user_range(policydb, fromcon, user,
 						 &usercon))
 				continue;
 
-			rc = context_struct_to_sid(state, &usercon, &sid);
+			rc = sidtab_context_to_sid(sidtab, &usercon, &sid);
 			if (rc)
 				goto out_unlock;
 			if (mynel < maxnel) {
@@ -2716,6 +2684,7 @@ static inline int __security_genfs_sid(struct selinux_state *state,
 				       u32 *sid)
 {
 	struct policydb *policydb = &state->ss->policydb;
+	struct sidtab *sidtab = &state->ss->sidtab;
 	int len;
 	u16 sclass;
 	struct genfs *genfs;
@@ -2750,7 +2719,7 @@ static inline int __security_genfs_sid(struct selinux_state *state,
 		goto out;
 
 	if (!c->sid[0]) {
-		rc = context_struct_to_sid(state, &c->context[0], &c->sid[0]);
+		rc = sidtab_context_to_sid(sidtab, &c->context[0], &c->sid[0]);
 		if (rc)
 			goto out;
 	}
@@ -2801,7 +2770,7 @@ int security_fs_use(struct selinux_state *state, struct super_block *sb)
 	read_lock(&state->ss->policy_rwlock);
 
 	policydb = &state->ss->policydb;
-	sidtab = state->ss->sidtab;
+	sidtab = &state->ss->sidtab;
 
 	c = policydb->ocontexts[OCON_FSUSE];
 	while (c) {
@@ -2813,7 +2782,7 @@ int security_fs_use(struct selinux_state *state, struct super_block *sb)
 	if (c) {
 		sbsec->behavior = c->v.behavior;
 		if (!c->sid[0]) {
-			rc = context_struct_to_sid(state, &c->context[0],
+			rc = sidtab_context_to_sid(sidtab, &c->context[0],
 						   &c->sid[0]);
 			if (rc)
 				goto out;
@@ -3004,7 +2973,7 @@ int security_sid_mls_copy(struct selinux_state *state,
 			  u32 sid, u32 mls_sid, u32 *new_sid)
 {
 	struct policydb *policydb = &state->ss->policydb;
-	struct sidtab *sidtab = state->ss->sidtab;
+	struct sidtab *sidtab = &state->ss->sidtab;
 	struct context *context1;
 	struct context *context2;
 	struct context newcon;
@@ -3060,7 +3029,8 @@ int security_sid_mls_copy(struct selinux_state *state,
 			goto out_unlock;
 		}
 	}
-	rc = context_struct_to_sid(state, &newcon, new_sid);
+
+	rc = sidtab_context_to_sid(sidtab, &newcon, new_sid);
 out_unlock:
 	read_unlock(&state->ss->policy_rwlock);
 	context_destroy(&newcon);
@@ -3094,7 +3064,7 @@ int security_net_peersid_resolve(struct selinux_state *state,
 				 u32 *peer_sid)
 {
 	struct policydb *policydb = &state->ss->policydb;
-	struct sidtab *sidtab = state->ss->sidtab;
+	struct sidtab *sidtab = &state->ss->sidtab;
 	int rc;
 	struct context *nlbl_ctx;
 	struct context *xfrm_ctx;
@@ -3449,7 +3419,7 @@ int selinux_audit_rule_match(u32 sid, u32 field, u32 op, void *vrule,
 		goto out;
 	}
 
-	ctxt = sidtab_search(state->ss->sidtab, sid);
+	ctxt = sidtab_search(&state->ss->sidtab, sid);
 	if (unlikely(!ctxt)) {
 		WARN_ONCE(1, "selinux_audit_rule_match: unrecognized SID %d\n",
 			  sid);
@@ -3614,7 +3584,7 @@ int security_netlbl_secattr_to_sid(struct selinux_state *state,
 				   u32 *sid)
 {
 	struct policydb *policydb = &state->ss->policydb;
-	struct sidtab *sidtab = state->ss->sidtab;
+	struct sidtab *sidtab = &state->ss->sidtab;
 	int rc;
 	struct context *ctx;
 	struct context ctx_new;
@@ -3650,7 +3620,7 @@ int security_netlbl_secattr_to_sid(struct selinux_state *state,
 		if (!mls_context_isvalid(policydb, &ctx_new))
 			goto out_free;
 
-		rc = context_struct_to_sid(state, &ctx_new, sid);
+		rc = sidtab_context_to_sid(sidtab, &ctx_new, sid);
 		if (rc)
 			goto out_free;
 
@@ -3692,7 +3662,7 @@ int security_netlbl_sid_to_secattr(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 
 	rc = -ENOENT;
-	ctx = sidtab_search(state->ss->sidtab, sid);
+	ctx = sidtab_search(&state->ss->sidtab, sid);
 	if (ctx == NULL)
 		goto out;
 
