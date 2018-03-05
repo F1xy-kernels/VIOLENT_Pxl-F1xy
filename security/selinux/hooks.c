@@ -6934,6 +6934,7 @@ static __init int selinux_init(void)
 	enforcing_set(&selinux_state, selinux_enforcing_boot);
 	selinux_state.checkreqprot = selinux_checkreqprot_boot;
 	selinux_ss_init(&selinux_state.ss);
+	selinux_avc_init(&selinux_state.avc);
 
 	/* Set the security state for the initial task. */
 	cred_init_security();
