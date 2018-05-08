@@ -114,8 +114,9 @@ static int ethqos_alloc_ipa_tx_queue_struct(struct qcom_ethqos *ethqos)
 
 	/* Allocate tx_desc_dma_addrs */
 	eth_ipa_ctx.tx_queue->tx_desc_dma_addrs =
-			kzalloc(sizeof(dma_addr_t) *
-				eth_ipa_ctx.tx_queue->desc_cnt, GFP_KERNEL);
+			kcalloc(eth_ipa_ctx.tx_queue->desc_cnt,
+				sizeof(dma_addr_t),
+				GFP_KERNEL);
 	if (!eth_ipa_ctx.tx_queue->tx_desc_dma_addrs) {
 		ETHQOSERR("ERROR: Unable to allocate Tx Desc dma addrs\n");
 		ret = -ENOMEM;
@@ -129,8 +130,9 @@ static int ethqos_alloc_ipa_tx_queue_struct(struct qcom_ethqos *ethqos)
 
 	/* Allocate tx_buf_ptrs */
 	eth_ipa_ctx.tx_queue->skb =
-		kzalloc(sizeof(struct sk_buff *) *
-			eth_ipa_ctx.tx_queue->desc_cnt, GFP_KERNEL);
+		kcalloc(eth_ipa_ctx.tx_queue->desc_cnt,
+			sizeof(struct sk_buff *),
+			GFP_KERNEL);
 	if (!eth_ipa_ctx.tx_queue->skb) {
 		ETHQOSERR("ERROR: Unable to allocate Tx buff ptrs\n");
 		ret = -ENOMEM;
@@ -139,7 +141,7 @@ static int ethqos_alloc_ipa_tx_queue_struct(struct qcom_ethqos *ethqos)
 
 	/* Allocate ipa_tx_buff_pool_va_addrs_base */
 	eth_ipa_ctx.tx_queue->ipa_tx_buff_pool_va_addrs_base =
-	kzalloc(sizeof(void *) * eth_ipa_ctx.tx_queue->desc_cnt, GFP_KERNEL);
+	kcalloc(eth_ipa_ctx.tx_queue->desc_cnt, sizeof(void *), GFP_KERNEL);
 	if (!eth_ipa_ctx.tx_queue->ipa_tx_buff_pool_va_addrs_base) {
 		ETHQOSERR("ERROR: Unable to allocate Tx ipa buff addrs\n");
 		ret = -ENOMEM;
@@ -147,7 +149,7 @@ static int ethqos_alloc_ipa_tx_queue_struct(struct qcom_ethqos *ethqos)
 	}
 
 	eth_ipa_ctx.tx_queue->skb_dma =
-	kzalloc(sizeof(dma_addr_t) * eth_ipa_ctx.tx_queue->desc_cnt,
+	kcalloc(eth_ipa_ctx.tx_queue->desc_cnt, sizeof(dma_addr_t),
 		GFP_KERNEL);
 	if (!eth_ipa_ctx.tx_queue->skb_dma) {
 		ETHQOSERR("ERROR: Unable to allocate Tx ipa buff addrs\n");
@@ -156,7 +158,7 @@ static int ethqos_alloc_ipa_tx_queue_struct(struct qcom_ethqos *ethqos)
 	}
 
 	eth_ipa_ctx.tx_queue->ipa_tx_buff_phy_addr =
-	kzalloc(sizeof(phys_addr_t) * eth_ipa_ctx.tx_queue->desc_cnt,
+	kcalloc(eth_ipa_ctx.tx_queue->desc_cnt, sizeof(phys_addr_t),
 		GFP_KERNEL);
 	if (!eth_ipa_ctx.tx_queue->ipa_tx_buff_phy_addr) {
 		ETHQOSERR("ERROR: Unable to allocate Tx ipa buff  dma addrs\n");
@@ -244,7 +246,7 @@ static int ethqos_alloc_ipa_rx_queue_struct(struct qcom_ethqos *ethqos)
 
 	/* Allocate rx_desc_dma_addrs */
 	eth_ipa_ctx.rx_queue->rx_desc_dma_addrs =
-		kzalloc(sizeof(dma_addr_t) * eth_ipa_ctx.rx_queue->desc_cnt,
+		kcalloc(eth_ipa_ctx.rx_queue->desc_cnt, sizeof(dma_addr_t),
 			GFP_KERNEL);
 	if (!eth_ipa_ctx.rx_queue->rx_desc_dma_addrs) {
 		ETHQOSERR("ERROR: Unable to allocate Rx Desc dma addr\n");
@@ -259,8 +261,9 @@ static int ethqos_alloc_ipa_rx_queue_struct(struct qcom_ethqos *ethqos)
 	}
 	/* Allocat rx_ipa_buff */
 	eth_ipa_ctx.rx_queue->skb =
-		kzalloc(sizeof(struct sk_buff *) *
-			eth_ipa_ctx.rx_queue->desc_cnt, GFP_KERNEL);
+		kcalloc(eth_ipa_ctx.rx_queue->desc_cnt,
+			sizeof(struct sk_buff *),
+			GFP_KERNEL);
 	if (!eth_ipa_ctx.rx_queue->skb) {
 		ETHQOSERR("ERROR: Unable to allocate Tx buff ptrs\n");
 		ret = -ENOMEM;
@@ -268,8 +271,7 @@ static int ethqos_alloc_ipa_rx_queue_struct(struct qcom_ethqos *ethqos)
 	}
 
 	eth_ipa_ctx.rx_queue->ipa_buff_va =
-	kzalloc(sizeof(void *) *
-		eth_ipa_ctx.rx_queue->desc_cnt, GFP_KERNEL);
+	kcalloc(eth_ipa_ctx.rx_queue->desc_cnt, sizeof(void *), GFP_KERNEL);
 	if (!eth_ipa_ctx.rx_queue->ipa_buff_va) {
 		ETHQOSERR("ERROR: Unable to allocate Tx buff ptrs\n");
 		ret = -ENOMEM;
@@ -278,7 +280,7 @@ static int ethqos_alloc_ipa_rx_queue_struct(struct qcom_ethqos *ethqos)
 
 	/* Allocate ipa_rx_buff_pool_va_addrs_base */
 	eth_ipa_ctx.rx_queue->ipa_rx_buff_pool_va_addrs_base =
-		kzalloc(sizeof(void *) * eth_ipa_ctx.rx_queue->desc_cnt,
+		kcalloc(eth_ipa_ctx.rx_queue->desc_cnt, sizeof(void *),
 			GFP_KERNEL);
 	if (!eth_ipa_ctx.rx_queue->ipa_rx_buff_pool_va_addrs_base) {
 		ETHQOSERR("ERROR: Unable to allocate Rx ipa buff addrs\n");
@@ -287,7 +289,7 @@ static int ethqos_alloc_ipa_rx_queue_struct(struct qcom_ethqos *ethqos)
 	}
 
 	eth_ipa_ctx.rx_queue->skb_dma =
-	kzalloc(sizeof(dma_addr_t) * eth_ipa_ctx.rx_queue->desc_cnt,
+	kcalloc(eth_ipa_ctx.rx_queue->desc_cnt, sizeof(dma_addr_t),
 		GFP_KERNEL);
 	if (!eth_ipa_ctx.rx_queue->skb_dma) {
 		ETHQOSERR("ERROR: Unable to allocate rx ipa buff addrs\n");
@@ -296,7 +298,7 @@ static int ethqos_alloc_ipa_rx_queue_struct(struct qcom_ethqos *ethqos)
 	}
 
 	eth_ipa_ctx.rx_queue->ipa_rx_buff_phy_addr =
-	kzalloc(sizeof(phys_addr_t) * eth_ipa_ctx.rx_queue->desc_cnt,
+	kcalloc(eth_ipa_ctx.rx_queue->desc_cnt, sizeof(phys_addr_t),
 		GFP_KERNEL);
 	if (!eth_ipa_ctx.rx_queue->ipa_rx_buff_phy_addr) {
 		ETHQOSERR("ERROR: Unable to allocate rx ipa buff  dma addrs\n");

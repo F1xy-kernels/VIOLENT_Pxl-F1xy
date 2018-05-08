@@ -1587,7 +1587,7 @@ static int iaxxx_download_pkg(struct iaxxx_priv *priv,
 					&bin_info);
 			dev_dbg(dev, "%s Physical address %pK\n", __func__,
 				file_section.start_address);
-			buf_data = kvzalloc(file_section.length *
+			buf_data = kvcalloc(file_section.length,
 						sizeof(uint32_t),
 						GFP_KERNEL);
 			if (!buf_data)
@@ -1655,8 +1655,7 @@ static int iaxxx_download_pkg(struct iaxxx_priv *priv,
 			(bin_info.bss_start_addr - bin_info.ro_data_start_addr);
 		file_section.length = (bin_info.bss_end_addr
 				- bin_info.bss_start_addr) >> 2;
-		buf_data = kvzalloc(file_section.length *
-					sizeof(uint32_t),
+		buf_data = kvcalloc(file_section.length, sizeof(uint32_t),
 					GFP_KERNEL);
 		if (!buf_data)
 			return -ENOMEM;

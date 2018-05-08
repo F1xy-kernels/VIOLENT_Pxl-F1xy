@@ -953,8 +953,9 @@ static int fw_parse_data(struct tas2563_priv *pTAS2563,
 	pImageData->mnBlocks = (pData[0] << 8) + pData[1];
 	pData += 2;
 
-	pImageData->mpBlocks = kmalloc(
-		sizeof(struct TBlock) * pImageData->mnBlocks, GFP_KERNEL);
+	pImageData->mpBlocks = kmalloc_array(pImageData->mnBlocks,
+					     sizeof(struct TBlock),
+					     GFP_KERNEL);
 
 	for (nBlock = 0; nBlock < pImageData->mnBlocks; nBlock++) {
 		n = fw_parse_block_data(pTAS2563, pFirmware,
@@ -979,8 +980,9 @@ static int fw_parse_program_data(struct tas2563_priv *pTAS2563,
 	if (pFirmware->mnPrograms == 0)
 		goto end;
 
-	pFirmware->mpPrograms = kmalloc(
-		sizeof(struct TProgram) * pFirmware->mnPrograms, GFP_KERNEL);
+	pFirmware->mpPrograms = kmalloc_array(pFirmware->mnPrograms,
+					      sizeof(struct TProgram),
+					      GFP_KERNEL);
 	for (nProgram = 0; nProgram < pFirmware->mnPrograms; nProgram++) {
 		pProgram = &(pFirmware->mpPrograms[nProgram]);
 		memcpy(pProgram->mpName, pData, 64);
@@ -1032,9 +1034,9 @@ static int fw_parse_configuration_data(struct tas2563_priv *pTAS2563,
 	if (pFirmware->mnConfigurations == 0)
 		goto end;
 
-	pFirmware->mpConfigurations = kmalloc(
-		sizeof(struct TConfiguration) * pFirmware->mnConfigurations,
-		GFP_KERNEL);
+	pFirmware->mpConfigurations = kmalloc_array(pFirmware->mnConfigurations,
+						    sizeof(struct TConfiguration),
+						    GFP_KERNEL);
 	for (nConfiguration = 0; nConfiguration < pFirmware->mnConfigurations;
 	     nConfiguration++) {
 		pConfiguration = &(pFirmware->mpConfigurations[nConfiguration]);
@@ -1097,8 +1099,9 @@ int fw_parse_calibration_data(struct tas2563_priv *pTAS2563,
 		goto end;
 
 	pFirmware->mpCalibrations =
-		kmalloc(sizeof(struct TCalibration) * pFirmware->mnCalibrations,
-			GFP_KERNEL);
+		kmalloc_array(pFirmware->mnCalibrations,
+			      sizeof(struct TCalibration),
+			      GFP_KERNEL);
 	for (nCalibration = 0; nCalibration < pFirmware->mnCalibrations;
 	     nCalibration++) {
 		pCalibration = &(pFirmware->mpCalibrations[nCalibration]);

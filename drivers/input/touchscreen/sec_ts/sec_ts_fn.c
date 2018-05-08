@@ -253,7 +253,7 @@ static ssize_t read_raw_check_show(struct device *dev,
 
 	sec_ts_set_bus_ref(ts, SEC_TS_BUS_REF_SYSFS, true);
 
-	buffer = vzalloc(ts->rx_count * ts->tx_count * 6);
+	buffer = vzalloc(array3_size(ts->rx_count, ts->tx_count, 6));
 	if (!buffer) {
 		sec_ts_set_bus_ref(ts, SEC_TS_BUS_REF_SYSFS, false);
 		return -ENOMEM;
@@ -1132,7 +1132,7 @@ static void sec_ts_print_frame(struct sec_ts_data *ts, short *min, short *max)
 
 	input_info(true, &ts->client->dev, "%s\n", __func__);
 
-	pStr = kzalloc(6 * (ts->tx_count + 1), GFP_KERNEL);
+	pStr = kcalloc(6, (ts->tx_count + 1), GFP_KERNEL);
 	if (pStr == NULL)
 		return;
 
@@ -2613,17 +2613,17 @@ static int sec_ts_read_frame_stdev(struct sec_ts_data *ts,
 		goto ErrorAlloc;
 
 	/* memory whole frame data : 1frame bytes * total frame */
-	pFrameAll = kzalloc(frame_len_byte * frame_tot, GFP_KERNEL);
+	pFrameAll = kcalloc(frame_tot, frame_len_byte, GFP_KERNEL);
 	if (!pFrameAll)
 		goto ErrorAlloc;
 
 	/* float type : type size is double */
-	pFrameAvg = kzalloc(frame_len_byte * 2, GFP_KERNEL);
+	pFrameAvg = kcalloc(frame_len_byte, 2, GFP_KERNEL);
 	if (!pFrameAvg)
 		goto ErrorAlloc;
 
 	/* 64-bit to prevent overflow */
-	pFrameStd = kzalloc(frame_len_byte * 4, GFP_KERNEL);
+	pFrameStd = kcalloc(frame_len_byte, 4, GFP_KERNEL);
 	if (!pFrameStd)
 		goto ErrorAlloc;
 
@@ -4174,8 +4174,8 @@ static void run_fs_cal_get_data(void *device_data)
 	} else { //(sec->cmd_param[0] == 3)
 		/* get fs_uniformity */
 
-		diff_table = kzalloc(ts->tx_count * ts->rx_count * 2,
-				GFP_KERNEL);
+		diff_table = kzalloc(array3_size(ts->tx_count, ts->rx_count, 2),
+				     GFP_KERNEL);
 
 		if ((diff_table == NULL) || (ts->fs_postcal_mean == 0)) {
 			input_err(true, &ts->client->dev,

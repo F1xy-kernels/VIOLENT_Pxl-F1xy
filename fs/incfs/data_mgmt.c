@@ -652,7 +652,7 @@ int incfs_get_filled_blocks(struct data_file *df,
 		return 0;
 	}
 
-	bme = kzalloc(sizeof(*bme) * READ_BLOCKMAP_ENTRIES,
+	bme = kcalloc(READ_BLOCKMAP_ENTRIES, sizeof(*bme),
 		      GFP_NOFS | __GFP_COMP);
 	if (!bme)
 		return -ENOMEM;

@@ -101,7 +101,7 @@ static ssize_t fts_debug_write(
 	}
 
 	if (buflen > PROC_BUF_SIZE) {
-		writebuf = (u8 *)kzalloc(buflen * sizeof(u8), GFP_KERNEL);
+		writebuf = (u8 *)kzalloc(buflen, GFP_KERNEL);
 		if (NULL == writebuf) {
 			FTS_ERROR("apk proc wirte buf zalloc fail");
 			return -ENOMEM;
@@ -217,7 +217,7 @@ static ssize_t fts_debug_read(
 	}
 
 	if (buflen > PROC_BUF_SIZE) {
-		readbuf = (u8 *)kzalloc(buflen * sizeof(u8), GFP_KERNEL);
+		readbuf = (u8 *)kzalloc(buflen, GFP_KERNEL);
 		if (NULL == readbuf) {
 			FTS_ERROR("apk proc wirte buf zalloc fail");
 			return -ENOMEM;
@@ -301,7 +301,7 @@ static int fts_debug_write(
 	}
 
 	if (buflen > PROC_BUF_SIZE) {
-		writebuf = (u8 *)kzalloc(buflen * sizeof(u8), GFP_KERNEL);
+		writebuf = (u8 *)kzalloc(buflen, GFP_KERNEL);
 		if (NULL == writebuf) {
 			FTS_ERROR("apk proc wirte buf zalloc fail");
 			return -ENOMEM;
@@ -400,7 +400,7 @@ static int fts_debug_read(
 	}
 
 	if (buflen > PROC_BUF_SIZE) {
-		readbuf = (u8 *)kzalloc(buflen * sizeof(u8), GFP_KERNEL);
+		readbuf = (u8 *)kzalloc(buflen, GFP_KERNEL);
 		if (NULL == readbuf) {
 			FTS_ERROR("apk proc wirte buf zalloc fail");
 			return -ENOMEM;

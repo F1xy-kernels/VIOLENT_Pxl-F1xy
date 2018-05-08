@@ -1076,8 +1076,7 @@ static int gasket_alloc_extended_subtable(struct gasket_page_table *pg_tbl,
 	gasket_subtable_manage_cb_t subtbl_manage_cb = NULL;
 	int ret;
 
-	pte->sublevel = vzalloc(sizeof(struct gasket_page_table_entry) *
-				GASKET_PAGES_PER_SUBTABLE);
+	pte->sublevel = vzalloc(array_size(GASKET_PAGES_PER_SUBTABLE, sizeof(struct gasket_page_table_entry)));
 	if (!pte->sublevel)
 		return -ENOMEM;
 

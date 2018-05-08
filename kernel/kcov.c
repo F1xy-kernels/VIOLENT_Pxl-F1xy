@@ -800,7 +800,7 @@ void kcov_remote_start(u64 handle)
 	spin_unlock(&kcov_remote_lock);
 
 	if (!area) {
-		area = vmalloc(size * sizeof(unsigned long));
+		area = vmalloc(array_size(size, sizeof(unsigned long)));
 		if (!area) {
 			t->kcov = NULL;
 			kcov_put(remote->kcov);

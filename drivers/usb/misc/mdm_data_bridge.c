@@ -677,7 +677,7 @@ static ssize_t show_timestamp(struct file *file, char __user *ubuf,
 	if (!record_timestamp)
 		return 0;
 
-	buf = kzalloc(sizeof(char) * DEBUG_BUF_SIZE, GFP_KERNEL);
+	buf = kzalloc(DEBUG_BUF_SIZE, GFP_KERNEL);
 	if (!buf)
 		return -ENOMEM;
 
@@ -713,7 +713,7 @@ static ssize_t data_bridge_read_stats(struct file *file, char __user *ubuf,
 	int			i;
 	int			temp = 0;
 
-	buf = kzalloc(sizeof(char) * DEBUG_BUF_SIZE, GFP_KERNEL);
+	buf = kzalloc(DEBUG_BUF_SIZE, GFP_KERNEL);
 	if (!buf)
 		return -ENOMEM;
 

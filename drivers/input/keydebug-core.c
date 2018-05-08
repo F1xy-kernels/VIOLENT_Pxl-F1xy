@@ -147,8 +147,8 @@ static int keydebug_parse_dt(struct device *dev,
 	}
 
 	/* Allocate down_size + 1 to assure 0 terminated */
-	pdata->keys_down = devm_kzalloc(dev,
-		(num_keys + 1) * sizeof(uint32_t), GFP_KERNEL);
+	pdata->keys_down = devm_kcalloc(dev,
+		num_keys + 1, sizeof(uint32_t), GFP_KERNEL);
 	if (!pdata->keys_down) {
 		pr_err("%s: DT:keys_down fail to allocate memory\n", __func__);
 		ret = -ENOMEM;

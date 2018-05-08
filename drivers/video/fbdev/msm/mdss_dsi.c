@@ -559,8 +559,9 @@ int mdss_dsi_get_dt_vreg_data(struct device *dev,
 		pr_debug("%s: vreg found. count=%d\n", __func__, mp->num_vreg);
 	}
 
-	mp->vreg_config = devm_kzalloc(dev, sizeof(struct dss_vreg) *
-		mp->num_vreg, GFP_KERNEL);
+	mp->vreg_config = devm_kcalloc(dev,
+				       mp->num_vreg, sizeof(struct dss_vreg),
+				       GFP_KERNEL);
 	if (!mp->vreg_config) {
 		rc = -ENOMEM;
 		goto error;
@@ -1155,7 +1156,7 @@ static int _mdss_dsi_refresh_cmd(struct buf_data *new_cmds,
 	}
 
 	/* Reallocate space for dcs commands */
-	cmds = kzalloc(cnt * sizeof(struct dsi_cmd_desc), GFP_KERNEL);
+	cmds = kcalloc(cnt, sizeof(struct dsi_cmd_desc), GFP_KERNEL);
 	if (!cmds)
 		return -ENOMEM;
 	kfree(original_pcmds->buf);

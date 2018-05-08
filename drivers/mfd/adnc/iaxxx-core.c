@@ -1016,8 +1016,8 @@ static int iaxxx_regdump_init(struct iaxxx_priv *priv)
 	if (!priv->reg_dump)
 		return -ENOMEM;
 
-	priv->reg_dump->log = kvzalloc(sizeof(struct iaxxx_register_log) *
-					IAXXX_BUF_MAX_LEN,
+	priv->reg_dump->log = kvcalloc(IAXXX_BUF_MAX_LEN,
+					sizeof(struct iaxxx_register_log),
 					GFP_KERNEL);
 	if (!priv->reg_dump->log) {
 		kvfree(priv->reg_dump);

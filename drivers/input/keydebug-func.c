@@ -309,19 +309,19 @@ void kernel_top_init(void)
 	if (cxt->kernel_top_alloc_done == false) {
 
 		cxt->prev_tasktics_array =
-			vmalloc(sizeof(u64) * PID_MAX_DEFAULT);
+			vmalloc(array_size(PID_MAX_DEFAULT, sizeof(u64)));
 		if (cxt->prev_tasktics_array == NULL)
 			goto err_alloc_prev_tasktics;
 		cxt->frame_tasktics_array =
-			vmalloc(sizeof(u64) * PID_MAX_DEFAULT);
+			vmalloc(array_size(PID_MAX_DEFAULT, sizeof(u64)));
 		if (cxt->frame_tasktics_array == NULL)
 			goto err_alloc_frame_tasktics;
 		cxt->task_ptr_array =
-			vmalloc(sizeof(struct task_struct *) * PID_MAX_DEFAULT);
+			vmalloc(array_size(PID_MAX_DEFAULT, sizeof(struct task_struct *)));
 		if (cxt->task_ptr_array == NULL)
 			goto err_alloc_task_ptr;
 		cxt->curr_task_pid_array =
-			vmalloc(sizeof(pid_t) * PID_MAX_DEFAULT);
+			vmalloc(array_size(PID_MAX_DEFAULT, sizeof(pid_t)));
 		if (cxt->curr_task_pid_array == NULL)
 			goto err_alloc_curr_task_pid;
 
