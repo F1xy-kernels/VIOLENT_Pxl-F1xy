@@ -267,8 +267,7 @@ static int get_tunnel_info_dump(struct iaxxx_priv *iaxxx,
 		return -EINVAL;
 	}
 
-	tmp_buf = kvzalloc(max(IAXXX_TNL_HDR_REG_NUM,
-				IAXXX_OUT_TNL_GRP_REG_NUM) *
+	tmp_buf = kvcalloc(max(IAXXX_TNL_HDR_REG_NUM, IAXXX_OUT_TNL_GRP_REG_NUM),
 				sizeof(uint32_t),
 				GFP_KERNEL);
 	if (!tmp_buf)
@@ -337,8 +336,7 @@ static int get_channel_info_dump(struct iaxxx_priv *iaxxx,
 		return -EINVAL;
 	}
 
-	tmp_buf = kvzalloc(max(IAXXX_CH_HDR_REG_NUM,
-				IAXXX_IN_CH_GRP_REG_NUM) *
+	tmp_buf = kvcalloc(max(IAXXX_CH_HDR_REG_NUM, IAXXX_IN_CH_GRP_REG_NUM),
 				sizeof(uint32_t),
 				GFP_KERNEL);
 	if (!tmp_buf)
@@ -402,8 +400,7 @@ static int get_stream_info_dump(struct iaxxx_priv *iaxxx,
 		return -EINVAL;
 	}
 
-	tmp_buf = kvzalloc(max(IAXXX_STR_HDR_REG_NUM,
-				IAXXX_STR_GRP_REG_NUM) *
+	tmp_buf = kvcalloc(max(IAXXX_STR_HDR_REG_NUM, IAXXX_STR_GRP_REG_NUM),
 				sizeof(uint32_t),
 				GFP_KERNEL);
 	if (!tmp_buf)

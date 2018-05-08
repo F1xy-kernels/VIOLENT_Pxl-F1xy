@@ -600,7 +600,7 @@ static struct ipu_iommu_page_table_shadow_entry
 	}
 
 	if (alloc_shadow) {
-		res.next_lvl = kvzalloc(PTE_ARM_TO_IPU * size, gfp);
+		res.next_lvl = kvcalloc(size, PTE_ARM_TO_IPU, gfp);
 		if (!res.next_lvl)
 			goto out_free_local;
 	} else {

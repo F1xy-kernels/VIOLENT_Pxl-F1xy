@@ -531,8 +531,8 @@ static int s2mpg01_regulator_probe(struct platform_device *pdev)
 
 	/* initialize and register device regulators */
 	s2mpg01_regulator->rdevs =
-		devm_kzalloc(dev,
-			     S2MPG01_NUM_REGULATORS *
+		devm_kcalloc(dev,
+			     S2MPG01_NUM_REGULATORS,
 			     sizeof(struct regulator_dev *),
 			     GFP_KERNEL);
 	if (!s2mpg01_regulator->rdevs) {

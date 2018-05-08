@@ -1169,7 +1169,7 @@ struct mdss_mdp_data *mdss_mdp_overlay_buf_alloc(struct msm_fb_data_type *mfd,
 		pr_debug("allocating %u bufs for fb%d\n",
 					BUF_POOL_SIZE, mfd->index);
 
-		buf = kzalloc(sizeof(*buf) * BUF_POOL_SIZE, GFP_KERNEL);
+		buf = kcalloc(BUF_POOL_SIZE, sizeof(*buf), GFP_KERNEL);
 		if (!buf)
 			return NULL;
 
@@ -5387,7 +5387,8 @@ static int __handle_ioctl_overlay_prepare(struct msm_fb_data_type *mfd,
 		return -EINVAL;
 	}
 
-	overlays = kmalloc(ovlist.num_overlays * sizeof(*overlays), GFP_KERNEL);
+	overlays = kmalloc_array(ovlist.num_overlays, sizeof(*overlays),
+				 GFP_KERNEL);
 	if (!overlays)
 		return -ENOMEM;
 

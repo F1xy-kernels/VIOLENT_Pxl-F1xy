@@ -698,13 +698,13 @@ static int iaxxx_update_relocatable_blocks(struct iaxxx_priv *priv)
 	}
 
 	/* Allocate a range configuration for the number of blocks */
-	range_cfg = devm_kzalloc(dev, nblks * sizeof(*range_cfg), GFP_KERNEL);
+	range_cfg = devm_kcalloc(dev, nblks, sizeof(*range_cfg), GFP_KERNEL);
 	if (!range_cfg)
 		return -ENOMEM;
 
 	/* Allocate a range configuration for second regmap */
-	range_cfg_1 = devm_kzalloc(dev,
-			IAXXX_REGMAP_NO_PM_NUM_ARBS * sizeof(*range_cfg),
+	range_cfg_1 = devm_kcalloc(dev,
+			IAXXX_REGMAP_NO_PM_NUM_ARBS, sizeof(*range_cfg),
 			GFP_KERNEL);
 	if (!range_cfg_1) {
 		devm_kfree(priv->dev, range_cfg);

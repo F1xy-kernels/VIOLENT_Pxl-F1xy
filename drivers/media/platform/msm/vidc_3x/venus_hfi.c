@@ -3960,8 +3960,8 @@ static int __init_resources(struct venus_hfi_device *device,
 	}
 
 	device->sys_init_capabilities =
-		kzalloc(sizeof(struct msm_vidc_capability)
-		* VIDC_MAX_SESSIONS, GFP_KERNEL);
+		kcalloc(VIDC_MAX_SESSIONS, sizeof(struct msm_vidc_capability),
+			GFP_KERNEL);
 
 	return rc;
 

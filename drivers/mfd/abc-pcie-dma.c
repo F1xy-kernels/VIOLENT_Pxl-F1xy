@@ -528,10 +528,11 @@ static int abc_pcie_vmalloc_buf_sg_build(enum dma_data_direction dir,
 	fp_offset = (dma_addr_t) dmadest & ~PAGE_MASK;
 	p_num = last_page - first_page + 1;
 
-	sgl->mypage = kvzalloc(p_num * sizeof(struct page *), GFP_KERNEL);
+	sgl->mypage = kvcalloc(p_num, sizeof(struct page *), GFP_KERNEL);
 	if (!sgl->mypage)
 		goto free_sg;
-	sgl->sc_list = kvmalloc(p_num * sizeof(struct scatterlist), GFP_KERNEL);
+	sgl->sc_list = kvmalloc_array(p_num, sizeof(struct scatterlist),
+				      GFP_KERNEL);
 	if (!sgl->sc_list)
 		goto free_sg;
 
@@ -614,12 +615,13 @@ int abc_pcie_user_local_buf_sg_build(enum dma_data_direction dir,
 	fp_offset = (unsigned long) dmadest & ~PAGE_MASK;
 	p_num = last_page - first_page + 1;
 
-	sgl->mypage = kvzalloc(p_num * sizeof(struct page *), GFP_KERNEL);
+	sgl->mypage = kvcalloc(p_num, sizeof(struct page *), GFP_KERNEL);
 	if (!sgl->mypage) {
 		sgl->n_num = 0;
 		return -EINVAL;
 	}
-	sgl->sc_list = kvmalloc(p_num * sizeof(struct scatterlist), GFP_KERNEL);
+	sgl->sc_list = kvmalloc_array(p_num, sizeof(struct scatterlist),
+				      GFP_KERNEL);
 	if (!sgl->sc_list) {
 		kvfree(sgl->mypage);
 		sgl->mypage = NULL;

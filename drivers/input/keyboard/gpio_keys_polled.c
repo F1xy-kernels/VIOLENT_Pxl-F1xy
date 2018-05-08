@@ -155,7 +155,8 @@ gpio_keys_polled_get_devtree_pdata(struct device *dev)
 	if (nbuttons == 0)
 		return ERR_PTR(-EINVAL);
 
-	pdata = devm_kzalloc(dev, sizeof(*pdata) + nbuttons * sizeof(*button),
+	pdata = devm_kzalloc(dev,
+			     CHECKME_struct_size(&*pdata, *button, nbuttons),
 			     GFP_KERNEL);
 	if (!pdata)
 		return ERR_PTR(-ENOMEM);

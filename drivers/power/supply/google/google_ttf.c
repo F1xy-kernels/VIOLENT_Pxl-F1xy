@@ -773,7 +773,7 @@ static int ttf_init_soc_parse_dt(struct ttf_adapter_stats *as,
 	if (table_count % 2)
 		return -EINVAL;
 
-	as->soc_table = devm_kzalloc(device, table_count * 2 * sizeof(u32),
+	as->soc_table = devm_kcalloc(device, table_count * 2, sizeof(u32),
 				     GFP_KERNEL);
 	if (!as->soc_table)
 		return -ENOMEM;

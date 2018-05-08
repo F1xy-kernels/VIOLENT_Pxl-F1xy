@@ -683,7 +683,7 @@ static int faceauth_probe(struct platform_device *pdev)
 
 	clear_debug_data();
 	debug_data_queue.data_buffer =
-		vmalloc(DEBUG_DATA_BIN_SIZE * DEBUG_DATA_NUM_BINS);
+		vmalloc(array_size(DEBUG_DATA_NUM_BINS, DEBUG_DATA_BIN_SIZE));
 
 	if (debug_data_queue.data_buffer == NULL) {
 		err = -ENOMEM;

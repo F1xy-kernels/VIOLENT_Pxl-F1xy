@@ -1755,11 +1755,12 @@ static int sec_ts_fw_init(struct sec_ts_data *ts)
 		return SEC_TS_ERR_INIT;
 	}
 
-	ts->pFrame = kzalloc(ts->tx_count * ts->rx_count * 2, GFP_KERNEL);
+	ts->pFrame = kzalloc(array3_size(ts->tx_count, ts->rx_count, 2),
+			     GFP_KERNEL);
 	if (!ts->pFrame)
 		return SEC_TS_ERR_ALLOC_FRAME;
 
-	ts->gainTable = kzalloc(ts->tx_count * ts->rx_count, GFP_KERNEL);
+	ts->gainTable = kcalloc(ts->tx_count, ts->rx_count, GFP_KERNEL);
 	if (!ts->gainTable) {
 		kfree(ts->pFrame);
 		ts->pFrame = NULL;

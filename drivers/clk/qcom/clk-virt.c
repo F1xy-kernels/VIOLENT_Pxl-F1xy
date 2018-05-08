@@ -654,8 +654,9 @@ static int clk_virt_probe(struct platform_device *pdev)
 	resets = desc->resets;
 	num_resets = desc->num_resets;
 
-	vcc = devm_kzalloc(&pdev->dev, sizeof(*vcc) + sizeof(*clks) * num_clks,
-			GFP_KERNEL);
+	vcc = devm_kzalloc(&pdev->dev,
+			   CHECKME_struct_size(&*vcc, *clks, num_clks),
+			   GFP_KERNEL);
 	if (!vcc) {
 		ret = -ENOMEM;
 		goto err;

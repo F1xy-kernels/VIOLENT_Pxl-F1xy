@@ -682,7 +682,7 @@ static int smd_pkt_init_rpmsg(struct smd_pkt_dev *smd_pkt_devp)
 	char *drv_name;
 
 	/* zalloc array of two to NULL terminate the match list */
-	match = devm_kzalloc(dev, 2 * sizeof(*match), GFP_KERNEL);
+	match = devm_kcalloc(dev, 2, sizeof(*match), GFP_KERNEL);
 	if (!match)
 		return -ENOMEM;
 

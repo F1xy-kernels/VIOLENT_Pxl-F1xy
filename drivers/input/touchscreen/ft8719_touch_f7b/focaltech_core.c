@@ -936,7 +936,9 @@ static int fts_input_init(struct fts_ts_data *ts_data)
 		goto err_point_buf;
 	}
 
-	ts_data->events = (struct ts_event *)kzalloc(point_num * sizeof(struct ts_event), GFP_KERNEL);
+	ts_data->events = (struct ts_event *) kcalloc(point_num,
+						      sizeof(struct ts_event),
+						      GFP_KERNEL);
 	if (!ts_data->events) {
 
 		FTS_ERROR("failed to alloc memory for point events!");

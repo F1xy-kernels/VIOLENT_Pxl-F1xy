@@ -470,10 +470,9 @@ get_param_blk_err:
 			return ret;
 		}
 
-		get_param_blk_buf = kvzalloc(
-					param_blk_with_ack.response_buf_size *
-					sizeof(uint32_t),
-					GFP_KERNEL);
+		get_param_blk_buf = kvcalloc(param_blk_with_ack.response_buf_size,
+					     sizeof(uint32_t),
+					     GFP_KERNEL);
 		if (!get_param_blk_buf) {
 			ret = -ENOMEM;
 			goto set_param_blk_err;

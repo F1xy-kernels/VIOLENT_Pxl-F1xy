@@ -279,9 +279,9 @@ static int airbrush_spi_client_alloc_buf(struct airbrush_spi_client *client)
 	client->buff_len_for_cmd = 16; /* sufficient for a cmd */
 
 	/* Allocate for both tx and rx */
-	client->tx_buff_onetime = devm_kmalloc(
+	client->tx_buff_onetime = devm_kmalloc_array(
 					&client->spi_device->dev,
-					2 * client->buff_len_onetime,
+					2, client->buff_len_onetime,
 					GFP_KERNEL | GFP_DMA);
 	if (client->tx_buff_onetime == NULL)
 		return -ENOMEM;
@@ -290,9 +290,9 @@ static int airbrush_spi_client_alloc_buf(struct airbrush_spi_client *client)
 
 
 	/* Allocate for both tx and rx */
-	client->tx_buff_for_cmd = devm_kmalloc(
+	client->tx_buff_for_cmd = devm_kmalloc_array(
 					&client->spi_device->dev,
-					2 * client->buff_len_for_cmd,
+					2, client->buff_len_for_cmd,
 					GFP_KERNEL | GFP_DMA);
 	if (client->tx_buff_for_cmd == NULL)
 		return -ENOMEM;

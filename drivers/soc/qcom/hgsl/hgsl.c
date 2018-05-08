@@ -782,8 +782,9 @@ static int hgsl_init_global_db(struct qcom_hgsl *hgsl,
 	}
 
 	if (!is_sender) {
-		hgsl->contexts = kzalloc(sizeof(struct hgsl_context *) *
-					HGSL_CONTEXT_NUM, GFP_KERNEL);
+		hgsl->contexts = kcalloc(HGSL_CONTEXT_NUM,
+					 sizeof(struct hgsl_context *),
+					 GFP_KERNEL);
 		if (!hgsl->contexts) {
 			ret = -ENOMEM;
 			goto disable_tcsr;

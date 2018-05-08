@@ -177,7 +177,9 @@ static int32_t nvt_bin_header_parser(const u8 *fwdata, size_t fwsize)
 			ovly_info, ilm_dlm_num, ovly_sec_num, info_sec_num, partition);
 
 	/* allocated memory for header info */
-	bin_map = (struct nvt_ts_bin_map *)kzalloc((partition+1) * sizeof(struct nvt_ts_bin_map), GFP_KERNEL);
+	bin_map = (struct nvt_ts_bin_map *) kcalloc(partition + 1,
+						    sizeof(struct nvt_ts_bin_map),
+						    GFP_KERNEL);
 	if(bin_map == NULL) {
 		NVT_ERR("kzalloc for bin_map failed!\n");
 		return -ENOMEM;

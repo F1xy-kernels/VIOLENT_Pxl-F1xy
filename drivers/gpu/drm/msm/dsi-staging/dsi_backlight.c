@@ -1220,7 +1220,8 @@ static int dsi_panel_bl_parse_lut(struct device *parent,
 	}
 
 	pr_debug("%s length %d\n", bl_lut_prop_name, lut_length);
-	bl_lut_tmp = devm_kmalloc(parent, sizeof(u16) * lut_length, GFP_KERNEL);
+	bl_lut_tmp = devm_kmalloc_array(parent, lut_length, sizeof(u16),
+					GFP_KERNEL);
 	if (bl_lut_tmp == NULL) {
 		rc = -ENOMEM;
 		goto done;

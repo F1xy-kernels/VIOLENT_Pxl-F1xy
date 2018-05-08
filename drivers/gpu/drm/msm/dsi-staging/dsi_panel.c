@@ -3106,7 +3106,7 @@ int dsi_panel_parse_esd_reg_read_configs(struct dsi_panel *panel)
 	}
 
 	esd_config->status_value =
-		kzalloc(sizeof(u32) * status_len * esd_config->groups,
+		kzalloc(array3_size(sizeof(u32), status_len, esd_config->groups),
 			GFP_KERNEL);
 	if (!esd_config->status_value) {
 		rc = -ENOMEM;
@@ -3643,7 +3643,7 @@ static void dsi_panel_debugfs_create_cmdsets(struct dentry *parent,
 	if (IS_ERR(r))
 		return;
 
-	entry = devm_kzalloc(dev, cmds_size * sizeof(*entry), GFP_KERNEL);
+	entry = devm_kcalloc(dev, cmds_size, sizeof(*entry), GFP_KERNEL);
 	if (!entry)
 		return;
 

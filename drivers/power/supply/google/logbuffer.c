@@ -191,7 +191,7 @@ struct logbuffer *debugfs_logbuffer_register(char *name)
 		return ERR_PTR(-ENOMEM);
 	}
 
-	instance->buffer = vzalloc(LOG_BUFFER_ENTRIES * LOG_BUFFER_ENTRY_SIZE);
+	instance->buffer = vzalloc(array_size(LOG_BUFFER_ENTRY_SIZE, LOG_BUFFER_ENTRIES));
 	if (!instance->buffer) {
 		pr_err("failed to create buffer %s\n", name);
 		instance = ERR_PTR(-ENOMEM);
