@@ -67,3 +67,7 @@ config ZRAM_DEFAULT_BACKEND
 	default "zsmalloc"
 
 endif
+
+config ZRAM_DEFAULT_COMP_ALGORITHM
+	string "Default ZRAM compression algorithm"
+	default "zstd"
