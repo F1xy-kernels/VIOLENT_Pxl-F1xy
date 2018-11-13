@@ -234,8 +234,11 @@ struct context *sidtab_search_force(struct sidtab *s, u32 sid)
 	return sidtab_search_core(s, sid, 1);
 }
 
-int sidtab_context_to_sid(struct sidtab *s, struct context *context,
-			  u32 *sid)
+static int sidtab_map(struct sidtab *s,
+		      int (*apply)(u32 sid,
+				   struct context *context,
+				   void *args),
+		      void *args)
 {
 	unsigned long flags;
 	u32 count;
@@ -317,7 +320,38 @@ out_unlock:
 	return rc;
 }
 
-static void sidtab_convert_hashtable(struct sidtab *s, u32 count)
+/* Clone the SID into the new SID table. */
+static int clone_sid(u32 sid, struct context *context, void *arg)
+{
+	struct sidtab *s = arg;
+
+	if (sid > SECINITSID_NUM)
+		return sidtab_insert(s, sid, context);
+	else
+		return 0;
+}
+
+int sidtab_convert(struct sidtab *s, struct sidtab *news,
+		   int (*convert)(u32 sid,
+				  struct context *context,
+				  void *args),
+		   void *args)
+{
+	unsigned long flags;
+	int rc;
+
+	spin_lock_irqsave(&s->lock, flags);
+	s->shutdown = 1;
+	spin_unlock_irqrestore(&s->lock, flags);
+
+	rc = sidtab_map(s, clone_sid, news);
+	if (rc)
+		return rc;
+
+	return sidtab_map(news, convert, args);
+}
+
+static void sidtab_update_cache(struct sidtab *s, struct sidtab_node *n, int loc)
 {
 	struct sidtab_entry_leaf *entry;
 	u32 i;
@@ -462,24 +496,4 @@ static void sidtab_destroy_tree(union sidtab_entry_inner entry, u32 level)
 			context_destroy(&node->entries[i].context);
 		kfree(node);
 	}
-}
-
-void sidtab_destroy(struct sidtab *s)
-{
-	u32 i, level;
-
-	for (i = 0; i < SECINITSID_NUM; i++)
-		if (s->isids[i].set)
-			context_destroy(&s->isids[i].leaf.context);
-
-	level = SIDTAB_MAX_LEVEL;
-	while (level && !s->roots[level].ptr_inner)
-		--level;
-
-	sidtab_destroy_tree(s->roots[level], level);
-	/*
-	 * The context_to_sid hashtable's objects are all shared
-	 * with the isids array and context tree, and so don't need
-	 * to be cleaned up here.
-	 */
 }
