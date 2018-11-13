@@ -100,13 +100,16 @@ int sidtab_set_initial(struct sidtab *s, u32 sid, struct context *context);
 struct context *sidtab_search(struct sidtab *s, u32 sid);
 struct context *sidtab_search_force(struct sidtab *s, u32 sid);
 
-int sidtab_convert(struct sidtab *s, struct sidtab_convert_params *params);
+int sidtab_convert(struct sidtab *s, struct sidtab *news,
+		   int (*apply)(u32 sid,
+				struct context *context,
+				void *args),
+		   void *args);
 
 int sidtab_context_to_sid(struct sidtab *s, struct context *context, u32 *sid);
 
 void sidtab_destroy(struct sidtab *s);
-
-int sidtab_hash_stats(struct sidtab *sidtab, char *page);
+void sidtab_set(struct sidtab *dst, struct sidtab *src);
 
 #endif	/* _SS_SIDTAB_H_ */
 
