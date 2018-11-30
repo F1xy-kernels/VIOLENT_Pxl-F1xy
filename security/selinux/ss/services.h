@@ -24,19 +24,21 @@ struct selinux_map {
 };
 
 struct selinux_ss {
-	struct sidtab sidtab;
+	struct sidtab *sidtab;
 	struct policydb policydb;
 	rwlock_t policy_rwlock;
 	u32 latest_granting;
 	struct selinux_map map;
 	struct page *status_page;
 	struct mutex status_lock;
-};
+} __randomize_layout;
 
 void services_compute_xperms_drivers(struct extended_perms *xperms,
 				struct avtab_node *node);
 
 void services_compute_xperms_decision(struct extended_perms_decision *xpermd,
 					struct avtab_node *node);
+
+int context_add_hash(struct policydb *policydb, struct context *context);
 
 #endif	/* _SS_SERVICES_H_ */
