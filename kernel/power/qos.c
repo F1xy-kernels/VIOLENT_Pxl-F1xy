@@ -539,9 +539,9 @@ static void pm_qos_irq_release(struct kref *ref)
 				pm_qos_array[req->pm_qos_class]->constraints;
 	unsigned long flags;
 
-	spin_lock_irqsave(&pm_qos_lock, flags);
+	spin_lock(&pm_qos_lock);
 	cpumask_setall(&req->cpus_affine);
-	spin_unlock_irqrestore(&pm_qos_lock, flags);
+	spin_unlock(&pm_qos_lock);
 
 	pm_qos_update_target(c, &req->node, PM_QOS_UPDATE_REQ,
 			c->default_value);
@@ -560,13 +560,13 @@ static void pm_qos_irq_notify(struct irq_affinity_notify *notify,
 	bool affinity_changed = false;
 	unsigned long flags;
 
-	spin_lock_irqsave(&pm_qos_lock, flags);
+	spin_lock(&pm_qos_lock);
 	if (!cpumask_equal(&req->cpus_affine, new_affinity)) {
 		cpumask_copy(&req->cpus_affine, new_affinity);
 		affinity_changed = true;
 	}
 
-	spin_unlock_irqrestore(&pm_qos_lock, flags);
+	spin_unlock(&pm_qos_lock);
 
 	if (affinity_changed)
 		pm_qos_update_target(c, &req->node, PM_QOS_UPDATE_REQ,
