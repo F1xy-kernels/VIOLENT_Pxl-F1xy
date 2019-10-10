@@ -445,15 +445,15 @@ static void zs_zpool_unmap(void *pool, unsigned long handle)
 
 static unsigned long zs_zpool_compact(void *pool)
 {
-       return zs_compact(pool);
+	return zs_compact(pool);
 }
 
 static unsigned long zs_zpool_get_compacted(void *pool)
 {
-       struct zs_pool_stats stats;
+	struct zs_pool_stats stats;
 
-       zs_pool_stats(pool, &stats);
-       return stats.pages_compacted;
+	zs_pool_stats(pool, &stats);
+	return stats.pages_compacted;
 }
 
 static u64 zs_zpool_total_size(void *pool)
@@ -479,11 +479,8 @@ static struct zpool_driver zs_zpool_driver = {
 	.unmap =	zs_zpool_unmap,
 	.total_size =	zs_zpool_total_size,
 	.compact =	zs_zpool_compact,
-	.get_num_compacted =	zs_zpool_get_compacted,
-	.total_size =		  zs_zpool_total_size,
-	.compact =		  zs_zpool_compact,
-	.get_num_compacted =	  zs_zpool_get_compacted,
-	.huge_class_size =	  zs_zpool_huge_class_size,
+	.get_num_compacted = zs_zpool_get_compacted,
+	.huge_class_size = zs_zpool_huge_class_size,
 };
 
 MODULE_ALIAS("zpool-zsmalloc");
