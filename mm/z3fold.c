@@ -173,8 +173,6 @@ struct z3fold_pool {
  * Internal z3fold page flags
  */
 enum z3fold_page_flags {
-	UNDER_RECLAIM = 0,
-	PAGE_HEADLESS,
 	PAGE_HEADLESS = 0,
 	MIDDLE_CHUNK_MAPPED,
 	NEEDS_COMPACTING,
@@ -982,6 +980,7 @@ lookup:
 /*
  * API Functions
  */
+
 /**
  * z3fold_create_pool() - create a new z3fold pool
  * @name:	pool name
@@ -1105,7 +1104,6 @@ static int z3fold_alloc(struct z3fold_pool *pool, size_t size, gfp_t gfp,
 	if (size > PAGE_SIZE)
 		return -ENOSPC;
 
-	gfp &= ~__GFP_HIGHMEM;
 	if (size > PAGE_SIZE - ZHDR_SIZE_ALIGNED - CHUNK_SIZE)
 		bud = HEADLESS;
 	else {
@@ -1413,11 +1411,9 @@ static int z3fold_reclaim_page(struct z3fold_pool *pool, unsigned int retries)
 			last_handle = 0;
 			middle_handle = 0;
 			if (zhdr->first_chunks)
-				first_handle = __encode_handle(zhdr, &slots,
-								FIRST);
+				first_handle = encode_handle(zhdr, FIRST);
 			if (zhdr->middle_chunks)
-				middle_handle = __encode_handle(zhdr, &slots,
-								MIDDLE);
+				middle_handle = encode_handle(zhdr, MIDDLE);
 			if (zhdr->last_chunks)
 				last_handle = encode_handle(zhdr, LAST);
 			/*
@@ -1426,7 +1422,7 @@ static int z3fold_reclaim_page(struct z3fold_pool *pool, unsigned int retries)
 			 */
 			z3fold_page_unlock(zhdr);
 		} else {
-			first_handle = __encode_handle(zhdr, &slots, HEADLESS);
+			first_handle = encode_handle(zhdr, HEADLESS);
 			last_handle = middle_handle = 0;
 		}
 		/* Issue the eviction callback(s) */
@@ -1509,7 +1505,6 @@ static void *z3fold_map(struct z3fold_pool *pool, unsigned long handle)
 	if (test_bit(PAGE_HEADLESS, &page->private))
 		goto out;
 
-	z3fold_page_lock(zhdr);
 	buddy = handle_to_buddy(handle);
 	switch (buddy) {
 	case FIRST:
@@ -1553,7 +1548,6 @@ static void z3fold_unmap(struct z3fold_pool *pool, unsigned long handle)
 	if (test_bit(PAGE_HEADLESS, &page->private))
 		return;
 
-	z3fold_page_lock(zhdr);
 	buddy = handle_to_buddy(handle);
 	if (buddy == MIDDLE)
 		clear_bit(MIDDLE_CHUNK_MAPPED, &page->private);
