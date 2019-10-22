@@ -1792,7 +1792,7 @@ static struct zpool_driver z3fold_zpool_driver = {
 	.map =		z3fold_zpool_map,
 	.unmap =	z3fold_zpool_unmap,
 	.total_size =	z3fold_zpool_total_size,
-	.huge_class_size =	z3fold_zpool_huge_class_size,
+	.huge_class_size = z3fold_zpool_huge_class_size,
 };
 
 MODULE_ALIAS("zpool-z3fold");
