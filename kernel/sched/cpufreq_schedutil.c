@@ -790,6 +790,7 @@ static ssize_t iowait_boost_enable_store(struct gov_attr_set *attr_set,
 {
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
 	bool enable;
+
 	if (kstrtobool(buf, &enable))
 		return -EINVAL;
 
@@ -1004,12 +1005,12 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	tunables->hispeed_load = DEFAULT_HISPEED_LOAD;
-	tunables->hispeed_freq = 0;
-	tunables->up_rate_limit_us = cpufreq_policy_transition_delay_us(policy);
+	tunables->up_rate_limit_us =
+				cpufreq_policy_transition_delay_us(policy);
 	tunables->down_rate_limit_us =
-		cpufreq_policy_transition_delay_us(policy);
-	tunables->iowait_boost_enable = true;
+				cpufreq_policy_transition_delay_us(policy);
+
+	tunables->iowait_boost_enable = false;
 
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;
