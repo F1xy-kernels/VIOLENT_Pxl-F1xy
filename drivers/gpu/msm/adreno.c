@@ -1321,21 +1321,6 @@ static int adreno_probe(struct platform_device *pdev)
 			"Failed to get gpuhtw LLC slice descriptor %ld\n",
 			PTR_ERR(adreno_dev->gpuhtw_llc_slice));
 
-#ifdef CONFIG_INPUT
-	if (!device->pwrctrl.input_disable) {
-		adreno_input_handler.private = device;
-		/*
-		 * It isn't fatal if we cannot register the input handler.  Sad,
-		 * perhaps, but not fatal
-		 */
-		if (input_register_handler(&adreno_input_handler)) {
-			adreno_input_handler.private = NULL;
-			KGSL_DRV_ERR(device,
-				"Unable to register the input handler\n");
-		}
-	}
-#endif
-
 	place_marker("M - DRIVER GPU Ready");
 out:
 	if (status) {
@@ -4113,17 +4098,12 @@ static int __kgsl_3d_init(void *arg)
 
 static int __init kgsl_3d_init(void)
 {
-#ifdef CONFIG_PLATFORM_AUTO
 	struct task_struct *kgsl_3d_init_task =
 		kthread_run(__kgsl_3d_init, NULL, "kgsl_3d_init");
 	if (IS_ERR(kgsl_3d_init_task))
 		return PTR_ERR(kgsl_3d_init_task);
 	else
 		return 0;
-#else
-	__kgsl_3d_init(NULL);
-	return 0;
-#endif
 }
 
 static void __exit kgsl_3d_exit(void)
