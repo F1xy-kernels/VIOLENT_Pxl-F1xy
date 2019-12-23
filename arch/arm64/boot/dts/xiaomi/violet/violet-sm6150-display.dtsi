@@ -104,3 +104,7 @@
 		};
 	};
 };
+
+&mdss_dsi_phy0 {	
+       qcom,panel-allow-phy-poweroff;	
+};
