@@ -300,10 +300,8 @@ static ssize_t ashmem_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 	if (asma->size == 0)
 		return 0;
 
-	if (!asma->file) {
-		ret = -EBADF;
-		goto out_unlock;
-	}
+	if (!asma->file)
+		return -EBADF;
 
 	/*
 	 * asma and asma->file are used outside the lock here.  We assume
@@ -311,13 +309,10 @@ static ssize_t ashmem_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 	 * be destroyed until all references to the file are dropped and
 	 * ashmem_release is called.
 	 */
-	mutex_unlock(&ashmem_mutex);
 	ret = vfs_iter_read(asma->file, iter, &iocb->ki_pos, 0);
-	mutex_lock(&ashmem_mutex);
 	if (ret > 0)
 		asma->file->f_pos = iocb->ki_pos;
-out_unlock:
-	mutex_unlock(&ashmem_mutex);
+
 	return ret;
 }
 
@@ -365,8 +360,8 @@ ashmem_vmfile_get_unmapped_area(struct file *file, unsigned long addr,
 static int ashmem_file_setup(struct ashmem_area *asma,
 			     struct vm_area_struct *vma)
 {
-	static struct file_operations vmfile_fops;
 	char name[ASHMEM_FULL_NAME_LEN] = ASHMEM_NAME_DEF;
+	static struct file_operations vmfile_fops;
 	struct file *vmfile;
 
 	spin_lock(&asma->name_lock);
@@ -379,7 +374,6 @@ static int ashmem_file_setup(struct ashmem_area *asma,
 	if (IS_ERR(vmfile))
 		return PTR_ERR(vmfile);
 	vmfile->f_mode |= FMODE_LSEEK;
-	WRITE_ONCE(asma->file, vmfile);
 	/*
 	 * override mmap operation of the vmfile so that it can't be
 	 * remapped which would lead to creation of a new vma with no
