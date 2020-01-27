@@ -387,6 +387,7 @@ static int ashmem_file_setup(struct ashmem_area *asma,
 				ashmem_vmfile_get_unmapped_area;
 	}
 	vmfile->f_op = &vmfile_fops;
+	WRITE_ONCE(asma->file, vmfile);
 	return 0;
 }
 
