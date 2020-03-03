@@ -7686,8 +7686,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			new_util = max(min_util, new_util);
 			if ((!(prefer_idle && idle_cpu(i))
 			    && new_util > capacity_orig) ||
-			    (is_min_capacity_cpu(i) &&
-			    !task_fits_capacity(p, capacity_orig, i)))
+			    !task_fits_capacity(p, capacity_orig, i))
 				continue;
 
 			/*
