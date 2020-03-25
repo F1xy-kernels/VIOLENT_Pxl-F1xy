@@ -7054,8 +7054,8 @@ static void sched_update_down_migrate_values(int cap_margin_levels,
 		 * Because there is no downmigration to it.
 		 */
 		for (i = 0; i < cap_margin_levels; i++)
-			if (cluster_cpus[i])
-				for_each_cpu(cpu, cluster_cpus[i])
+			if (cluster_cpus[i+1])
+				for_each_cpu(cpu, cluster_cpus[i+1])
 				    sched_capacity_margin_down_array[cpu] =
 				    sysctl_sched_capacity_margin_down_array[i];
 	} else {
