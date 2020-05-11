@@ -20,6 +20,7 @@
 *.elf
 *.gcno
 *.gz
+*.gz-dtb
 *.i
 *.ko
 *.ll
@@ -76,7 +77,6 @@ modules.builtin
 !.gitignore
 !.mailmap
 !.cocciconfig
-!.clang-format
 
 #
 # Generated include files
@@ -134,3 +134,9 @@ kernel/configs/android-*.cfg
 #Ignoring Android.bp link file
 #
 Android.bp
+
+# Violent
+builds/
+out/
+flasher/version
+flasher/dtbo.img
