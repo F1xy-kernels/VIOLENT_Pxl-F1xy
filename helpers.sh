@@ -14,10 +14,10 @@
 #### CONFIGURATION ####
 
 # Kernel name
-kernel_name="F1XY"
+kernel_name="F1xy-Pxl"
 
 # Defconfig name
-defconfig="vendor/violet-perf_defconfig"
+defconfig="f1xy_defconfig"
 
 # Target architecture
 arch="arm64"
