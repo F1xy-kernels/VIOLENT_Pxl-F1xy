@@ -1300,15 +1300,15 @@ static inline int adreno_is_a6xx(struct adreno_device *adreno_dev)
 	return 1;
 }
 
-static inline int adreno_is_a640(struct adreno_device *adreno_dev)
+static inline int adreno_is_a612(struct adreno_device *adreno_dev)
 {
 	return 1;
 }
 
 ADRENO_TARGET(a610, ADRENO_REV_A610)
-ADRENO_TARGET(a612, ADRENO_REV_A612)
 ADRENO_TARGET(a618, ADRENO_REV_A618)
 ADRENO_TARGET(a630, ADRENO_REV_A630)
+ADRENO_TARGET(a640, ADRENO_REV_A640)
 ADRENO_TARGET(a680, ADRENO_REV_A680)
 
 /*
