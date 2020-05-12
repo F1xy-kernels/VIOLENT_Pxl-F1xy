@@ -31,5 +31,5 @@ static const struct adreno_gpu_core adreno_gpulist[] = {
 		.busy_mask = 0xFFFFFFFE,
 		.gpmufw_name = "a612_rgmu.bin",
 		.cx_ipeak_gpu_freq = 745000000,
-	},
+	}
 };
