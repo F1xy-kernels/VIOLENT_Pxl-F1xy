@@ -683,7 +683,6 @@ LD		:= $(LDGOLD)
 endif
 ifdef CONFIG_LD_LLD
 LD		:= $(LDLLD)
-LDFINAL_vmlinux := $(LDLLD)
 endif
 
 ifdef CONFIG_LTO_CLANG
@@ -691,6 +690,8 @@ ifdef CONFIG_LTO_CLANG
 ifeq ($(ld-name),gold)
 LDFLAGS		+= -plugin LLVMgold.so
 endif
+endif
+
 # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
 # of objdump for processing symbol versions and exports
 LLVM_AR		:= llvm-ar
@@ -720,6 +721,13 @@ ifdef CONFIG_PROFILE_ALL_BRANCHES
 KBUILD_CFLAGS	+= -O2 $(call cc-disable-warning,maybe-uninitialized,)
 else
 KBUILD_CFLAGS   += -O2
+ifeq ($(cc-name),gcc)
+KBUILD_CFLAGS	+= -mcpu=cortex-a76.cortex-a55 -mtune=cortex-a76.cortex-a55
+endif
+ifeq ($(cc-name),clang)
+KBUILD_CFLAGS   += -O3
+KBUILD_CFLAGS	+= -mcpu=cortex-a55 -mtune=cortex-a55
+endif
 endif
 endif
 
@@ -887,9 +895,9 @@ LDFLAGS 	+= -plugin-opt,cache-policy=cache_size=5%:cache_size_bytes=5g
 endif
 endif
 else
-lto-clang-flags	:= -flto
+lto-clang-flags := -flto
 endif
-lto-clang-flags += -fvisibility=default $(call cc-option, -fsplit-lto-unit)
+lto-clang-flags += -fvisibility=hidden
 
 # Limit inlining across translation units to reduce binary size
 LD_FLAGS_LTO_CLANG := -mllvm -import-instr-limit=5
