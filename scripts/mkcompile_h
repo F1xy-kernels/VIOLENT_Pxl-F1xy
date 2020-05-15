@@ -74,8 +74,8 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
 
   echo \#define UTS_VERSION \"`echo $UTS_VERSION | $UTS_TRUNCATE`\"
 
-  echo \#define LINUX_COMPILE_BY \"`echo KuranKaname | $UTS_TRUNCATE`\"
-  echo \#define LINUX_COMPILE_HOST \"`echo Revolution | $UTS_TRUNCATE`\"
+  echo \#define LINUX_COMPILE_BY \"`echo XeonDead | $UTS_TRUNCATE`\"
+  echo \#define LINUX_COMPILE_HOST \"`echo arch-builder | $UTS_TRUNCATE`\"
 
   echo \#define LINUX_COMPILER \"`$CC -v 2>&1 | grep ' version ' | sed 's/[[:space:]]*$//'`\"
 ) > .tmpcompile
