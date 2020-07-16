@@ -102,8 +102,6 @@ static struct adreno_device device_3d0 = {
 	.ft_policy = KGSL_FT_DEFAULT_POLICY,
 	.ft_pf_policy = KGSL_FT_PAGEFAULT_DEFAULT_POLICY,
 	.long_ib_detect = 1,
-	.input_work = __WORK_INITIALIZER(device_3d0.input_work,
-		adreno_input_work),
 	.pwrctrl_flag = BIT(ADRENO_HWCG_CTRL) | BIT(ADRENO_THROTTLING_CTRL),
 	.profile.enabled = false,
 	.active_list = LIST_HEAD_INIT(device_3d0.active_list),
