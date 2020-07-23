@@ -44,6 +44,7 @@ static struct ion_buffer *ion_buffer_create(struct ion_heap *heap,
 					    unsigned long flags)
 {
 	struct ion_buffer *buffer;
+	struct sg_table *table;
 	int ret;
 
 	buffer = kmalloc(sizeof(*buffer), GFP_KERNEL);
