@@ -80,7 +80,12 @@ const char *selinux_policycap_names[__POLICYDB_CAPABILITY_MAX] = {
 	"nnp_nosuid_transition"
 };
 
-static struct selinux_ss selinux_ss;
+int selinux_policycap_netpeer;
+int selinux_policycap_openperm;
+int selinux_policycap_extsockclass;
+int selinux_policycap_alwaysnetwork;
+int selinux_policycap_cgroupseclabel;
+int selinux_policycap_nnp_nosuid_transition;
 
 void selinux_ss_init(struct selinux_ss **ss)
 {
@@ -2107,9 +2112,6 @@ static void security_load_policycaps(struct selinux_state *state)
 			pr_info("SELinux:  unknown policy capability %u\n",
 				i);
 	}
-
-	state->android_netlink_route = p->android_netlink_route;
-	selinux_nlmsg_init();
 }
 
 static int security_preserve_bools(struct selinux_state *state,
