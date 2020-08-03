@@ -768,6 +768,21 @@ static void avc_audit_post_callback(struct audit_buffer *ab, void *a)
 		audit_log_format(ab, " permissive=%u",
 				 ad->selinux_audit_data->result ? 0 : 1);
 	}
+
+	/* in case of invalid context report also the actual context string */
+	rc = security_sid_to_context_inval(sad->state, sad->ssid, &scontext,
+					   &scontext_len);
+	if (!rc && scontext) {
+		audit_log_format(ab, " srawcon=%s", scontext);
+		kfree(scontext);
+	}
+
+	rc = security_sid_to_context_inval(sad->state, sad->tsid, &scontext,
+					   &scontext_len);
+	if (!rc && scontext) {
+		audit_log_format(ab, " trawcon=%s", scontext);
+		kfree(scontext);
+	}
 }
 
 
@@ -780,10 +795,6 @@ noinline int slow_avc_audit(struct selinux_state *state,
 {
 	struct common_audit_data stack_data;
 	struct selinux_audit_data sad;
-
-	/* Only log permissive=1 messages for SECURITY_SELINUX_DEVELOP */
-	if (denied && !result)
-		return 0;
 
 	if (!a) {
 		a = &stack_data;
