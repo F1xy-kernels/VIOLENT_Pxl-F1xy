@@ -728,6 +728,12 @@ rwsem_spin_on_owner(struct rw_semaphore *sem, unsigned long nonspinnable)
 
 	for (;;) {
 		bool same_owner;
+
+		if (atomic_long_read(&sem->count) & RWSEM_FLAG_HANDOFF) {
+			state = OWNER_NONSPINNABLE;
+			break;
+		}
+
 		rcu_read_lock();
 		/*
 		 * When a waiting writer set the handoff flag, it may spin
