@@ -14,12 +14,7 @@
  *
  */
 
-#include <linux/debugfs.h>
-#include <linux/dma-mapping.h>
-#include <linux/err.h>
-#include <linux/fs.h>
 #include <linux/list.h>
-#include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/swap.h>
 #include <linux/sched/signal.h>
@@ -59,7 +54,7 @@ static int ion_page_pool_add(struct ion_page_pool *pool, struct page *page)
 
 	nr_total_pages += 1 << pool->order;
 	mod_node_page_state(page_pgdat(page), NR_KERNEL_MISC_RECLAIMABLE,
-			    (1 << (PAGE_SHIFT + pool->order)));
+							1 << pool->order);
 	spin_unlock(&pool->lock);
 	return 0;
 }
@@ -136,11 +131,7 @@ struct page *ion_page_pool_alloc_pool_only(struct ion_page_pool *pool)
 
 void ion_page_pool_free(struct ion_page_pool *pool, struct page *page)
 {
-	int ret;
-
-	ret = ion_page_pool_add(pool, page);
-	if (ret)
-		ion_page_pool_free_pages(pool, page);
+	ion_page_pool_add(pool, page);
 }
 
 void ion_page_pool_free_immediate(struct ion_page_pool *pool, struct page *page)
@@ -225,9 +216,3 @@ void ion_page_pool_destroy(struct ion_page_pool *pool)
 {
 	kfree(pool);
 }
-
-static int __init ion_page_pool_init(void)
-{
-	return 0;
-}
-device_initcall(ion_page_pool_init);

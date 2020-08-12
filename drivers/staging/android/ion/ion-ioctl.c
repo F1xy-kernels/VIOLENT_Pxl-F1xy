@@ -41,7 +41,7 @@ static int validate_ioctl_arg(unsigned int cmd, union ion_ioctl_arg *arg)
 		break;
 	}
 
-	return ret ? -EINVAL : 0;
+	return 0;
 }
 
 long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
