@@ -13,7 +13,8 @@ enum mm_event_type {
 	MM_COMPACTION = 3,
 	MM_RECLAIM = 4,
 	MM_SWP_FAULT = 5,
-	MM_TYPE_NUM = 6,
+	MM_KERN_ALLOC = 6,
+	MM_TYPE_NUM = 7,
 };
 
 struct mm_event_task {
