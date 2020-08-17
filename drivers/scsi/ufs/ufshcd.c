@@ -127,20 +127,7 @@ static int ufshcd_tag_req_type(struct ufshcd_lrb *lrbp)
 	if (!lrbp->cmd)
 		return TS_NOT_SUPPORTED;
 
-	opcode = (u8)(*lrbp->cmd->cmnd);
-	switch (opcode) {
-	case READ_10:
-	case READ_16:
-		return TS_READ;
-	case WRITE_10:
-	case WRITE_16:
-		return TS_WRITE;
-	case UNMAP:
-		return TS_DISCARD;
-	case SYNCHRONIZE_CACHE:
-		return TS_FLUSH;
-	}
-	return TS_NOT_SUPPORTED;
+	return rq_type;
 }
 
 static void ufshcd_update_tag_stats(struct ufs_hba *hba, int tag)
