@@ -198,7 +198,7 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 	int rc = 0, vote_data_count = 0, i = 0;
 	struct hfi_device *hdev;
 	struct msm_vidc_inst *inst = NULL;
-	struct vidc_bus_vote_data *vote_data = core->bus_vote_data;
+	struct vidc_bus_vote_data vote_data[MAX_SUPPORTED_INSTANCES];
 	bool is_turbo = false;
 
 	if (!core || !core->device) {
@@ -218,7 +218,6 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 			dprintk(VIDC_ERR, "%s Invalid args\n",
 				__func__);
 			mutex_unlock(&core->lock);
-			kfree(vote_data);
 			return -EINVAL;
 		}
 
@@ -332,12 +331,10 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 
 		i++;
 	}
-
+	mutex_unlock(&core->lock);
 	if (vote_data_count)
 		rc = call_hfi_op(hdev, vote_bus, hdev->hfi_device_data,
 			vote_data, vote_data_count);
-
-	mutex_unlock(&core->lock);
 
 	return rc;
 }
