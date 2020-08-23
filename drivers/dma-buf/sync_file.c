@@ -436,6 +436,8 @@ static long sync_file_ioctl_fence_info(struct sync_file *sync_file,
 	if (info.num_fences < num_fences)
 		return -EINVAL;
 
+	memset(&fence_info, 0, sizeof(fence_info));
+
 	for (i = 0; i < num_fences; i++) {
 		int status = sync_fill_fence_info(fences[i], &fence_info);
 		info.status = info.status <= 0 ? info.status : status;
