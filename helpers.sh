@@ -149,6 +149,8 @@ function kmake() {
 function mkzip() {
 	local fn="${1:-kernel.zip}"
 
+	RELEASE_VER=$(echo $RELEASE_VER | cut -d "." -f 1)
+
 	# Populate fields based on build type (stable release or test build)
 	if [[ $RELEASE_VER -gt 0 ]]; then
 		local ver_prefix="v"
