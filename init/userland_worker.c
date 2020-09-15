@@ -24,7 +24,7 @@
 #define MAX_CHAR 128
 #define DELAY 500
 
-static const char* path_to_files[] = { "/sdcard/Artemis/configs/dns.txt", "/sdcard/Artemis/configs/flash_boot.txt" };
+static const char* path_to_files[] = { "/sdcard/f1xy/configs/dns.txt", "/sdcard/f1xy/configs/flash_boot.txt" };
 
 struct values {
 	int dns;
@@ -217,17 +217,17 @@ static void create_dirs(void)
 	}
 
 	strcpy(argv[0], "/system/bin/mkdir");
-	strcpy(argv[1], "/sdcard/Artemis");
+	strcpy(argv[1], "/sdcard/f1xy");
 	argv[2] = NULL;
 
 	ret = use_userspace(argv);
 	if (!ret)
-		pr_info("Artemis folder doesn't exist! Creating.");
+		pr_info("f1xy folder doesn't exist! Creating.");
 	else
-		pr_info("Artemis folder already created");
+		pr_info("f1xy folder already created");
 
 	strcpy(argv[0], "/system/bin/mkdir");
-	strcpy(argv[1], "/sdcard/Artemis/configs");
+	strcpy(argv[1], "/sdcard/f1xy/configs");
 	argv[2] = NULL;
 
 	ret = use_userspace(argv);
@@ -237,20 +237,20 @@ static void create_dirs(void)
 		pr_info("Configs folder already created");
 
 	strcpy(argv[0], "/system/bin/ls");
-	strcpy(argv[1], "/sdcard/Artemis/configs/dns.txt");
+	strcpy(argv[1], "/sdcard/f1xy/configs/dns.txt");
 	argv[2] = NULL;
 
 	ret = use_userspace(argv);
 	if (ret) {
 		strcpy(argv[0], "/system/bin/touch");
-		strcpy(argv[1], "/sdcard/Artemis/configs/dns.txt");
+		strcpy(argv[1], "/sdcard/f1xy/configs/dns.txt");
 		argv[2] = NULL;
 
 		ret = use_userspace(argv);
 		if (!ret) {
 			pr_info("DNS file created!");
 
-			call_sh("/system/bin/printf 0 > /sdcard/Artemis/configs/dns.txt");
+			call_sh("/system/bin/printf 0 > /sdcard/f1xy/configs/dns.txt");
 		} else {
 			pr_err("Couldn't create dns file!");
 		}
@@ -259,20 +259,20 @@ static void create_dirs(void)
 	}
 
 	strcpy(argv[0], "/system/bin/ls");
-	strcpy(argv[1], "/sdcard/Artemis/configs/flash_boot.txt");
+	strcpy(argv[1], "/sdcard/f1xy/configs/flash_boot.txt");
 	argv[2] = NULL;
 
 	ret = use_userspace(argv);
 	if (ret) {
 		strcpy(argv[0], "/system/bin/touch");
-		strcpy(argv[1], "/sdcard/Artemis/configs/flash_boot.txt");
+		strcpy(argv[1], "/sdcard/f1xy/configs/flash_boot.txt");
 		argv[2] = NULL;
 
 		ret = use_userspace(argv);
 		if (!ret) {
 			pr_info("flash_boot file created!");
 
-			call_sh("/system/bin/printf 0 > /sdcard/Artemis/configs/flash_boot.txt");
+			call_sh("/system/bin/printf 0 > /sdcard/f1xy/configs/flash_boot.txt");
 		} else {
 			pr_err("Couldn't create flash_boot file!");
 		}
@@ -335,7 +335,7 @@ static void encrypted_work(void)
 
 	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "dalvik.vm.dex2oat-cpu-set");
-	strcpy(argv[2], "0,1,2,3,4,5,6");
+	strcpy(argv[2], "0,1,2,3,4,5,6,7");
 	argv[3] = NULL;
 
 	ret = use_userspace(argv);
@@ -346,7 +346,7 @@ static void encrypted_work(void)
 
 	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "dalvik.vm.dex2oat-threads");
-	strcpy(argv[2], "6");
+	strcpy(argv[2], "8");
 	argv[3] = NULL;
 
 	ret = use_userspace(argv);
@@ -528,7 +528,7 @@ static void decrypted_work(void)
 	if (tweaks && tweaks->flash_boot) {
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /sdcard/Artemis/configs/flash_boot.txt");
+		strcpy(argv[2], "/system/bin/rm /sdcard/f1xy/configs/flash_boot.txt");
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
@@ -539,36 +539,36 @@ static void decrypted_work(void)
 
 		strcpy(argv[0], "/system/bin/test");
 		strcpy(argv[1], "-f");
-		strcpy(argv[2], "/sdcard/Artemis/boot.img");
+		strcpy(argv[2], "/sdcard/f1xy/boot.img");
 		argv[3] = NULL;
 
 	        ret = use_userspace(argv);
 		if (!ret) {
-			int flash_a, flash_b;
+			int flashed_boot, flashed_dtbo;
 
 			strcpy(argv[0], "/system/bin/dd");
-			strcpy(argv[1], "if=/sdcard/Artemis/boot.img");
-			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot_b");
+			strcpy(argv[1], "if=/sdcard/f1xy/boot.img");
+			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot");
 			argv[3] = NULL;
 
-			flash_b = use_userspace(argv);
-			if (!flash_b)
-				pr_info("Boot image _b flashed!");
+			flashed_boot = use_userspace(argv);
+			if (!flashed_boot)
+				pr_info("Boot image flashed!");
 			else
-				pr_err("DD failed! %d", flash_b);
+				pr_err("DD failed! %d", flashed_boot);
 
 			strcpy(argv[0], "/system/bin/dd");
-			strcpy(argv[1], "if=/sdcard/Artemis/boot.img");
-			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot_a");
+			strcpy(argv[1], "if=/sdcard/f1xy/dtbo.img");
+			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/dtbo");
 			argv[3] = NULL;
 
-			flash_a = use_userspace(argv);
-			if (!flash_a)
-				pr_info("Boot image _a flashed!");
+			flashed_dtbo = use_userspace(argv);
+			if (!flashed_dtbo)
+				pr_info("DTBO image flashed!");
 			else
-				pr_err("DD failed! %d", flash_a);
+				pr_err("DD failed! %d", flashed_dtbo);
 
-			if (!flash_a || !flash_b) {
+			if (!flashed_boot || !flashed_dtbo) {
 				strcpy(argv[0], "/system/bin/sh");
 				strcpy(argv[1], "-c");
 				strcpy(argv[2], "/system/bin/reboot");
@@ -584,9 +584,8 @@ static void decrypted_work(void)
 			pr_err("No boot.img found!");
 		}
 
-		call_sh("/system/bin/printf 0 > /sdcard/Artemis/configs/flash_boot.txt");
+		call_sh("/system/bin/printf 0 > /sdcard/f1xy/configs/flash_boot.txt");
 	}
-
 
 	strcpy(argv[0], "/system/bin/cp");
 	strcpy(argv[1], "/storage/emulated/0/resetprop_static");
