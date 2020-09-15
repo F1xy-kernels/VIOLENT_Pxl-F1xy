@@ -22,7 +22,7 @@
 #define LEN(arr) ((int) (sizeof (arr) / sizeof (arr)[0]))
 #define INITIAL_SIZE 4
 #define MAX_CHAR 128
-#define DELAY 4000
+#define DELAY 500
 
 static const char* path_to_files[] = { "/sdcard/f1xy/configs/dns.txt", "/sdcard/f1xy/configs/flash_boot.txt" };
 
@@ -252,7 +252,7 @@ static void create_dirs(void)
 
 			call_sh("/system/bin/printf 0 > /sdcard/f1xy/configs/dns.txt");
 		} else {
-			pr_err("Couldn't create dns file!");
+			pr_err("Couldn't create dns file! %d", ret);
 		}
 	} else {
 		pr_info("Dns file exists!");
@@ -274,7 +274,7 @@ static void create_dirs(void)
 
 			call_sh("/system/bin/printf 0 > /sdcard/f1xy/configs/flash_boot.txt");
 		} else {
-			pr_err("Couldn't create flash_boot file!");
+			pr_err("Couldn't create flash_boot file! %d", ret);
 		}
 	} else {
 		pr_info("flash_boot file exists!");
@@ -287,7 +287,6 @@ static void create_dirs(void)
 	msleep(100);
 }
 
-/*
 static inline void set_selinux(int value)
 {
 	pr_info("Setting selinux state: %d", value);
@@ -300,7 +299,6 @@ static inline void set_selinux(int value)
 	if (!value)
 		call_lsm_notifier(LSM_POLICY_CHANGE, NULL);
 }
-*/
 
 static void encrypted_work(void)
 {
@@ -372,13 +370,13 @@ static void decrypted_work(void)
 		return;
 	}
 
-	/*if (!is_decrypted) {
+	if (!is_decrypted) {
 		pr_info("Waiting for fs decryption!");
 		while (!is_decrypted)
 			msleep(1000);
 		msleep(10000);
 		pr_info("Fs decrypted!");
-	}*/
+	}
 
 	create_dirs();
 	tweaks = alloc_and_populate();
@@ -618,12 +616,13 @@ static void decrypted_work(void)
 static void userland_worker(struct work_struct *work)
 {
 	struct proc_dir_entry *userland_dir;
-/*	bool is_enforcing;
+	bool is_enforcing = false;
 
-	is_enforcing = enforcing_enabled(extern_state);
+	if (extern_state)
+		is_enforcing = enforcing_enabled(extern_state);
 	if (is_enforcing)
 		set_selinux(0);
-*/
+
 	encrypted_work();
 	decrypted_work();
 
@@ -633,9 +632,8 @@ static void userland_worker(struct work_struct *work)
 	else
 		pr_info("Proc dir created successfully!");
 
-/*	if (is_enforcing)
+	if (is_enforcing)
 		set_selinux(1);
-*/
 }
 
 static int __init userland_worker_entry(void)
