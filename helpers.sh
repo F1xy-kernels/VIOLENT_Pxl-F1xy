@@ -24,7 +24,7 @@ arch="arm64"
 
 # Base kernel compile flags (extended by compiler setup script)
 kmake_flags=(
-	-j"${jobs:-6}"
+	-j"${jobs:-16}"
 	ARCH="$arch"
 	O="out"
 )
@@ -187,6 +187,11 @@ function mkzip() {
 	popd > /dev/null
 }
 
+function mkbootzip() {
+	mkbootimage
+	zip -q9 builds/f1xy-rika.zip out/arch/arm64/boot/dtbo.img out/boot.img
+}
+
 # Create a test package of the current kernel image
 function dzip() {
 	mkzip "builds/$kernel_name-$device_name-test$(buildnum).zip"
@@ -228,6 +233,9 @@ function dbuild() {
 	kmake "$@" && dzip
 }
 
+function mkbootimage() {
+mkbootimg-osm0sis --kernel out/arch/arm64/boot/Image.gz --dtb out/arch/arm64/boot/dts/xiaomi/qcom-base/sm6150.dtb --cmdline 'androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.hardware.color=ORG msm_rtb.filter=0x237 ehci-hcd.park=3 service_locator.enable=1 androidboot.memcg=1 earlycon=msm_geni_serial,0x880000 usbcore.autosuspend=7 androidboot.usbcontroller=a600000.dwc3 swiotlb=2048 androidboot.selinux=permissive buildvariant=user' --header_version 2 -o out/boot.img
+}
 
 #### INSTALLATION ####
 
