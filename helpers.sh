@@ -24,7 +24,7 @@ arch="arm64"
 
 # Base kernel compile flags (extended by compiler setup script)
 kmake_flags=(
-	-j"${jobs:-16}"
+	-j"${jobs:-28}"
 	ARCH="$arch"
 	O="out"
 )
