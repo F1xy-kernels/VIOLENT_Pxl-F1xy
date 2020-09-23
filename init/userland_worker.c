@@ -544,7 +544,7 @@ static void decrypted_work(void)
 
 	        ret = use_userspace(argv);
 		if (!ret) {
-			int flashed_boot, flashed_dtbo;
+			int flashed_boot;
 
 			strcpy(argv[0], "/system/bin/dd");
 			strcpy(argv[1], "if=/sdcard/f1xy/boot.img");
@@ -557,18 +557,7 @@ static void decrypted_work(void)
 			else
 				pr_err("DD failed! %d", flashed_boot);
 
-			strcpy(argv[0], "/system/bin/dd");
-			strcpy(argv[1], "if=/sdcard/f1xy/dtbo.img");
-			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/dtbo");
-			argv[3] = NULL;
-
-			flashed_dtbo = use_userspace(argv);
-			if (!flashed_dtbo)
-				pr_info("DTBO image flashed!");
-			else
-				pr_err("DD failed! %d", flashed_dtbo);
-
-			if (!flashed_boot || !flashed_dtbo) {
+			if (!flashed_boot) {
 				strcpy(argv[0], "/system/bin/sh");
 				strcpy(argv[1], "-c");
 				strcpy(argv[2], "/system/bin/reboot");
