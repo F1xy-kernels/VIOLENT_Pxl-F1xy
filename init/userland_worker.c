@@ -339,7 +339,7 @@ static void encrypted_work(void)
 
 	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "dalvik.vm.dex2oat-cpu-set");
-	strcpy(argv[2], "0,1,2,3,4,5,6,7");
+	strcpy(argv[2], "0,1,2,3,4,5,6");
 	argv[3] = NULL;
 
 	ret = use_userspace(argv);
@@ -350,7 +350,7 @@ static void encrypted_work(void)
 
 	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "dalvik.vm.dex2oat-threads");
-	strcpy(argv[2], "8");
+	strcpy(argv[2], "6");
 	argv[3] = NULL;
 
 	ret = use_userspace(argv);
@@ -391,36 +391,47 @@ static void decrypted_work(void)
 	if (tweaks && tweaks->flash_boot) {
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /sdcard/f1xy/configs/flash_boot.txt");
+		strcpy(argv[2], "/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt");
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
 		if (!ret)
-			pr_info("Flash_boot file deleted!");
+			pr_info("Flash_boot config unset!");
 		else
-			pr_err("Couldn't delete Flash_boot file! %d", ret);
+			pr_err("Couldn't unset Flash_boot file! %d", ret);
 
 		strcpy(argv[0], "/system/bin/test");
 		strcpy(argv[1], "-f");
-		strcpy(argv[2], "/sdcard/f1xy/boot.img");
+		strcpy(argv[2], "/data/user/0/com.kaname.artemiscompanion/files/boot.img");
 		argv[3] = NULL;
 
 	        ret = use_userspace(argv);
 		if (!ret) {
-			int flash_boot;
+			int flash_a, flash_b;
 
 			strcpy(argv[0], "/system/bin/dd");
-			strcpy(argv[1], "if=/sdcard/f1xy/boot.img");
-			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot");
+			strcpy(argv[1], "if=/data/user/0/com.kaname.artemiscompanion/files/boot.img");
+			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot_b");
 			argv[3] = NULL;
 
-			flash_boot = use_userspace(argv);
-			if (!flash_boot)
-				pr_info("Boot image flashed!");
+			flash_b = use_userspace(argv);
+			if (!flash_b)
+				pr_info("Boot image _b flashed!");
 			else
-				pr_err("DD failed! %d", flash_boot);
+				pr_err("DD failed! %d", flash_b);
 
-			if (!flash_boot) {
+			strcpy(argv[0], "/system/bin/dd");
+			strcpy(argv[1], "if=/data/user/0/com.kaname.artemiscompanion/files/boot.img");
+			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot_a");
+			argv[3] = NULL;
+
+			flash_a = use_userspace(argv);
+			if (!flash_a)
+				pr_info("Boot image _a flashed!");
+			else
+				pr_err("DD failed! %d", flash_a);
+
+			if (!flash_a || !flash_b) {
 				strcpy(argv[0], "/system/bin/sh");
 				strcpy(argv[1], "-c");
 				strcpy(argv[2], "/system/bin/reboot");
@@ -456,7 +467,7 @@ static void decrypted_work(void)
 
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/cp /sdcard/f1xy/assets/cbackup.sh /data/local/tmp/cbackup.sh");
+		strcpy(argv[2], "/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/cbackup.sh /data/local/tmp/cbackup.sh");
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
@@ -492,7 +503,7 @@ static void decrypted_work(void)
 		if (!ret) {
 			strcpy(argv[0], "/system/bin/sh");
 			strcpy(argv[1], "-c");
-			strcpy(argv[2], "/system/bin/printf 1 > /sdcard/f1xy/configs/status.txt");
+			strcpy(argv[2], "/system/bin/printf 1 > /data/user/0/com.kaname.artemiscompanion/files/configs/status.txt");
 			argv[3] = NULL;
 
 			ret = use_userspace(argv);
@@ -503,7 +514,7 @@ static void decrypted_work(void)
 		} else {
 			strcpy(argv[0], "/system/bin/sh");
 			strcpy(argv[1], "-c");
-			strcpy(argv[2], "/system/bin/printf -1 > /sdcard/f1xy/configs/status.txt");
+			strcpy(argv[2], "/system/bin/printf -1 > /data/user/0/com.kaname.artemiscompanion/files/configs/status.txt");
 			argv[3] = NULL;
 
 			ret = use_userspace(argv);
@@ -515,18 +526,18 @@ static void decrypted_work(void)
 
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /sdcard/f1xy/configs/backup.txt");
+		strcpy(argv[2], "/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt");
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
 		if (!ret)
-			pr_info("Backup file removed!");
+			pr_info("Backup config unset!");
 		else
-			pr_err("Couldn't remove backup file! %d", ret);
+			pr_err("Couldn't unset backup config! %d", ret);
 
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /sdcard/f1xy/configs/pass.txt");
+		strcpy(argv[2], "/system/bin/rm /data/user/0/com.kaname.artemiscompanion/files/configs/pass.txt");
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
@@ -541,9 +552,9 @@ static void decrypted_work(void)
 		argv[3] = NULL;
 
 		if (!ret)
-			pr_info("Tmp file deleted!");
+			pr_info("Backup scrip deleted!");
 		else
-			pr_err("Couldn't delete tmp file! %d", ret);
+			pr_err("Couldn't delete backup script! %d", ret);
 
 		if (!is_su)
 			restore_syscalls();
