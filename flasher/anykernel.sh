@@ -21,25 +21,13 @@ supported.versions=
 block=/dev/block/bootdevice/by-name/boot;
 is_slot_device=0;
 ramdisk_compression=none;
-customdd="bs=1048576"
 
 ## AnyKernel methods (DO NOT CHANGE)
 # import patching functions/variables - see for reference
 . tools/ak3-core.sh;
 
 ## AnyKernel install
-# dump_boot;
 split_boot;
-
-# begin ramdisk changes
-
-# Set Android version for kernel
-ver="$(file_getprop /system/build.prop ro.build.version.release)"
-if [ ! -z "$ver" ]; then
-  patch_cmdline "androidboot.version" "androidboot.version=$ver"
-else
-  patch_cmdline "androidboot.version" ""
-fi
 
 if mountpoint -q /data; then
   # Optimize F2FS extension list (@arter97)
@@ -84,11 +72,7 @@ if mountpoint -q /data; then
   done
 fi
 
-if [ -f $split_img/ramdisk.cpio ]; then
-  ui_print "Ramdisk found";
-  unpack_ramdisk;
-fi;
-
-write_boot;
+flash_boot;
+flash_dtbo;
 
 ## end install
